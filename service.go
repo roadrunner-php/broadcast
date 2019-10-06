@@ -70,7 +70,7 @@ func (s *Service) AddCommand(name string, cmd CommandHandler) {
 
 // Init service.
 func (s *Service) Init(cfg *Config, r *rpc.Service, h *rhttp.Service, e env.Environment) (bool, error) {
-	if cfg.Path == "" || h == nil {
+	if cfg.Path == "" {
 		return false, nil
 	}
 
@@ -80,10 +80,7 @@ func (s *Service) Init(cfg *Config, r *rpc.Service, h *rhttp.Service, e env.Envi
 	s.commands = make(map[string]CommandHandler)
 
 	// ensure that underlying kernel knows what route to handle
-	if e != nil {
-		e.SetEnv("RR_BROADCAST_URL", cfg.Path)
-	}
-
+	e.SetEnv("RR_BROADCAST_URL", cfg.Path)
 	h.AddMiddleware(s.middleware)
 
 	return true, nil
@@ -165,6 +162,10 @@ func (s *Service) middleware(f http.HandlerFunc) http.HandlerFunc {
 					return
 				}
 
+				if len(topics) == 0 {
+					continue
+				}
+
 				if err := broker.Subscribe(upstream, topics...); err != nil {
 					s.handleError(err, conn)
 					return
@@ -177,6 +178,10 @@ func (s *Service) middleware(f http.HandlerFunc) http.HandlerFunc {
 				if err := cmd.Unmarshal(&topics); err != nil {
 					s.handleError(err, conn)
 					return
+				}
+
+				if len(topics) == 0 {
+					continue
 				}
 
 				broker.Unsubscribe(upstream, topics...)
