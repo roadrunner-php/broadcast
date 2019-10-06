@@ -7,7 +7,6 @@ import (
 	rhttp "github.com/spiral/roadrunner/service/http"
 	"github.com/spiral/roadrunner/service/http/attributes"
 	"github.com/spiral/roadrunner/service/rpc"
-	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -34,13 +33,11 @@ type Broker interface {
 	Broadcast(messages ...*Message) error
 }
 
-//type CommandHandler func()
+// CommandHandler handles custom commands.
+type CommandHandler func(upstream chan *Message, conn *websocket.Conn, data []byte)
 
 // Service manages even broadcasting over websockets.
 type Service struct {
-	// todo: listeners
-	// todo: debug
-
 	// service and broker configuration
 	cfg *Config
 
@@ -51,26 +48,42 @@ type Service struct {
 	mu     sync.Mutex
 	broker Broker
 
+	// event listeners
+	lsns []func(event int, ctx interface{})
+
 	// custom commands
-	//muc      sync.Mutex
-	//commands map[string]CommandHandler
+	commands map[string]CommandHandler
 
 	// manages all open connections and broadcasting
 	connPool *connPool
 }
 
+// AddListener attaches server event controller.
+func (s *Service) AddListener(l func(event int, ctx interface{})) {
+	s.lsns = append(s.lsns, l)
+}
+
+// AddListener attaches server event controller.
+func (s *Service) AddCommand(name string, cmd CommandHandler) {
+	s.commands[name] = cmd
+}
+
 // Init service.
 func (s *Service) Init(cfg *Config, r *rpc.Service, h *rhttp.Service, e env.Environment) (bool, error) {
-	if cfg.Path == "" {
+	if cfg.Path == "" || h == nil {
 		return false, nil
 	}
 
 	s.cfg = cfg
 	s.upgrade = websocket.Upgrader{}
 	s.connPool = &connPool{conn: make(map[*websocket.Conn]chan *Message)}
+	s.commands = make(map[string]CommandHandler)
 
 	// ensure that underlying kernel knows what route to handle
-	e.SetEnv("RR_BROADCAST_URL", cfg.Path)
+	if e != nil {
+		e.SetEnv("RR_BROADCAST_URL", cfg.Path)
+	}
+
 	h.AddMiddleware(s.middleware)
 
 	return true, nil
@@ -125,10 +138,12 @@ func (s *Service) middleware(f http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
+		s.throw(EventConnect, conn)
 		upstream := s.connPool.connect(conn, s.handleError)
 
 		defer s.connPool.disconnect(conn)
 		defer broker.Unsubscribe(upstream)
+		defer s.throw(EventDisconnect, conn)
 
 		cmd := &Command{}
 		for {
@@ -156,6 +171,7 @@ func (s *Service) middleware(f http.HandlerFunc) http.HandlerFunc {
 				}
 
 				upstream <- NewMessage("@join", topics)
+				s.throw(EventJoin, &TopicEvent{Conn: conn, Topics: topics})
 			case "leave":
 				topics := make([]string, 0)
 				if err := cmd.Unmarshal(&topics); err != nil {
@@ -165,36 +181,26 @@ func (s *Service) middleware(f http.HandlerFunc) http.HandlerFunc {
 
 				broker.Unsubscribe(upstream, topics...)
 				upstream <- NewMessage("@leave", topics)
+				s.throw(EventLeave, &TopicEvent{Conn: conn, Topics: topics})
 			default:
-				if cmd.Command == "send" {
-					send := &Send{}
-					if err := cmd.Unmarshal(send); err == nil {
-
-						log.Print("send")
-
-						err := broker.Broadcast(NewMessage(
-							send.Topic,
-							send.Message,
-						))
-
-						if err != nil {
-							log.Print(err)
-						}
-					}
+				if handler, ok := s.commands[cmd.Command]; ok {
+					handler(upstream, conn, cmd.Data)
 				}
 			}
 		}
 	}
 }
 
-type Send struct {
-	Topic   string `json:"topic"`
-	Message string `json:"message"`
-}
-
 // handle connection error
 func (s *Service) handleError(err error, conn *websocket.Conn) {
-	log.Print(err)
+	s.throw(EventError, &ErrorEvent{Conn: conn, Caused: err})
+}
+
+// throw handles service, server and pool events.
+func (s *Service) throw(event int, ctx interface{}) {
+	for _, l := range s.lsns {
+		l(event, ctx)
+	}
 }
 
 // assertAccess checks if user can access given channel, the application will receive all user headers and cookies.
