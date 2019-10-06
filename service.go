@@ -40,7 +40,6 @@ type Broker interface {
 type Service struct {
 	// todo: listeners
 	// todo: debug
-	// todo: other shit
 
 	// service and broker configuration
 	cfg *Config
