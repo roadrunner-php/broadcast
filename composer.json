@@ -1,7 +1,7 @@
 {
   "name": "spiral/broadcast",
   "type": "library",
-  "description": "Broadcasting messages over web-sockets",
+  "description": "Broadcast messages over web-sockets",
   "license": "MIT",
   "authors": [
     {
