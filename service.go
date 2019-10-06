@@ -1,0 +1,216 @@
+package broadcast
+
+import (
+	"errors"
+	"github.com/gorilla/websocket"
+	"github.com/spiral/roadrunner/service/env"
+	rhttp "github.com/spiral/roadrunner/service/http"
+	"github.com/spiral/roadrunner/service/http/attributes"
+	"github.com/spiral/roadrunner/service/rpc"
+	"log"
+	"net/http"
+	"strings"
+	"sync"
+)
+
+// ID defines public service name.
+const ID = "broadcast"
+
+// Broker defines the ability to operate as message passing broker.
+type Broker interface {
+	// Serve serves broker.
+	Serve() error
+
+	// Stop the consumption and disconnect broker.
+	Stop()
+
+	// Subscribe broker to one or multiple topics.
+	Subscribe(upstream chan *Message, topics ...string) error
+
+	// Unsubscribe broker from one or multiple topics.
+	Unsubscribe(upstream chan *Message, topics ...string)
+
+	// Broadcast one or multiple messages.
+	Broadcast(messages ...*Message) error
+}
+
+//type CommandHandler func()
+
+// Service manages even broadcasting over websockets.
+type Service struct {
+	// todo: listeners
+	// todo: debug
+	// todo: other shit
+
+	// service and broker configuration
+	cfg *Config
+
+	// manages ws upgrade protocol
+	upgrade websocket.Upgrader
+
+	// broadcast messages
+	mu     sync.Mutex
+	broker Broker
+
+	// custom commands
+	//muc      sync.Mutex
+	//commands map[string]CommandHandler
+
+	// manages all open connections and broadcasting
+	connPool *connPool
+}
+
+// Init service.
+func (s *Service) Init(cfg *Config, r *rpc.Service, h *rhttp.Service, e env.Environment) (bool, error) {
+	if cfg.Path == "" {
+		return false, nil
+	}
+
+	s.cfg = cfg
+	s.upgrade = websocket.Upgrader{}
+	s.connPool = &connPool{conn: make(map[*websocket.Conn]chan *Message)}
+
+	// ensure that underlying kernel knows what route to handle
+	e.SetEnv("RR_BROADCAST_URL", cfg.Path)
+	h.AddMiddleware(s.middleware)
+
+	return true, nil
+}
+
+// Serve broadcast broker.
+func (s *Service) Serve() (err error) {
+	defer s.connPool.close()
+
+	s.mu.Lock()
+	if s.cfg.Redis != nil {
+		s.broker, err = redisBroker(s.cfg.Redis, s.handleError)
+		if err != nil {
+			return err
+		}
+	} else {
+		s.broker = memoryBroker()
+	}
+	s.mu.Unlock()
+
+	return s.broker.Serve()
+}
+
+// Stop broadcast broker.
+func (s *Service) Stop() {
+	broker := s.Broker()
+	if broker != nil {
+		broker.Stop()
+	}
+}
+
+// Broker returns associated broker.
+func (s *Service) Broker() Broker {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.broker
+}
+
+// middleware intercepts websocket connections.
+func (s *Service) middleware(f http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		broker := s.broker
+		if r.URL.Path != s.cfg.Path || broker == nil {
+			f(w, r)
+			return
+		}
+
+		conn, err := s.upgrade.Upgrade(w, r, nil)
+		if err != nil {
+			s.handleError(err, nil)
+			return
+		}
+
+		upstream := s.connPool.connect(conn, s.handleError)
+
+		defer s.connPool.disconnect(conn)
+		defer broker.Unsubscribe(upstream)
+
+		cmd := &Command{}
+		for {
+			if err := conn.ReadJSON(cmd); err != nil {
+				s.handleError(err, conn)
+				return
+			}
+
+			switch cmd.Command {
+			case "join":
+				topics := make([]string, 0)
+				if err := cmd.Unmarshal(&topics); err != nil {
+					s.handleError(err, conn)
+					return
+				}
+
+				if err := s.assertAccess(f, r, topics...); err != nil {
+					s.handleError(err, conn)
+					return
+				}
+
+				if err := broker.Subscribe(upstream, topics...); err != nil {
+					s.handleError(err, conn)
+					return
+				}
+
+				upstream <- NewMessage("@join", topics)
+			case "leave":
+				topics := make([]string, 0)
+				if err := cmd.Unmarshal(&topics); err != nil {
+					s.handleError(err, conn)
+					return
+				}
+
+				broker.Unsubscribe(upstream, topics...)
+				upstream <- NewMessage("@leave", topics)
+			default:
+				if cmd.Command == "send" {
+					send := &Send{}
+					if err := cmd.Unmarshal(send); err == nil {
+
+						log.Print("send")
+
+						err := broker.Broadcast(NewMessage(
+							send.Topic,
+							send.Message,
+						))
+
+						if err != nil {
+							log.Print(err)
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+type Send struct {
+	Topic   string `json:"topic"`
+	Message string `json:"message"`
+}
+
+// handle connection error
+func (s *Service) handleError(err error, conn *websocket.Conn) {
+	log.Print(err)
+}
+
+// assertAccess checks if user can access given channel, the application will receive all user headers and cookies.
+// the decision to authorize user will be based on response code (200).
+func (s *Service) assertAccess(f http.HandlerFunc, r *http.Request, channels ...string) error {
+	w := newResponseWrapper()
+	if err := attributes.Set(r, "listenChannels", strings.Join(channels, ",")); err != nil {
+		return err
+	}
+
+	f(w, r)
+
+	if !w.IsOK() {
+		return errors.New(string(w.Body()))
+	}
+
+	return nil
+}
