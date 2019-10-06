@@ -29,43 +29,9 @@ func (m *Memory) Serve() error {
 	for {
 		select {
 		case ctx := <-m.listen:
-			for _, topic := range ctx.topics {
-				if _, ok := m.routes[topic]; !ok {
-					m.routes[topic] = make([]chan *Message, 0)
-				}
-
-				joined := false
-				for _, up := range m.routes[topic] {
-					if up == ctx.upstream {
-						joined = true
-						break
-					}
-				}
-
-				if !joined {
-					m.routes[topic] = append(m.routes[topic], ctx.upstream)
-				}
-			}
+			m.handleJoin(ctx)
 		case ctx := <-m.leave:
-			for _, topic := range ctx.topics {
-				if _, ok := m.routes[topic]; !ok {
-					continue
-				}
-
-				for i, up := range m.routes[topic] {
-					if up == ctx.upstream {
-						m.routes[topic][i] = m.routes[topic][len(m.routes[topic])-1]
-						m.routes[topic][len(m.routes[topic])-1] = nil
-						m.routes[topic] = m.routes[topic][:len(m.routes[topic])-1]
-						break
-					}
-				}
-
-				if len(m.routes[topic]) == 0 {
-					// topic has no subscribers
-					delete(m.routes, topic)
-				}
-			}
+			m.handleLeave(ctx)
 		case msg := <-m.messages:
 			if _, ok := m.routes[msg.Topic]; !ok {
 				continue
@@ -77,6 +43,48 @@ func (m *Memory) Serve() error {
 
 		case <-m.stop:
 			return nil
+		}
+	}
+}
+
+func (m *Memory) handleLeave(ctx streamContext) {
+	for _, topic := range ctx.topics {
+		if _, ok := m.routes[topic]; !ok {
+			continue
+		}
+
+		for i, up := range m.routes[topic] {
+			if up == ctx.upstream {
+				m.routes[topic][i] = m.routes[topic][len(m.routes[topic])-1]
+				m.routes[topic][len(m.routes[topic])-1] = nil
+				m.routes[topic] = m.routes[topic][:len(m.routes[topic])-1]
+				break
+			}
+		}
+
+		if len(m.routes[topic]) == 0 {
+			// topic has no subscribers
+			delete(m.routes, topic)
+		}
+	}
+}
+
+func (m *Memory) handleJoin(ctx streamContext) {
+	for _, topic := range ctx.topics {
+		if _, ok := m.routes[topic]; !ok {
+			m.routes[topic] = make([]chan *Message, 0)
+		}
+
+		joined := false
+		for _, up := range m.routes[topic] {
+			if up == ctx.upstream {
+				joined = true
+				break
+			}
+		}
+
+		if !joined {
+			m.routes[topic] = append(m.routes[topic], ctx.upstream)
 		}
 	}
 }

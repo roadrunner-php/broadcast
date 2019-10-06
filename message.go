@@ -2,7 +2,7 @@ package broadcast
 
 import "encoding/json"
 
-// Payload represent single message.
+// Message represent single message.
 type Message struct {
 	// Topic message been pushed into.
 	Topic string `json:"topic"`

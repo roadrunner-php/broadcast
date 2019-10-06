@@ -48,61 +48,10 @@ func (r *Redis) Serve() error {
 	for {
 		select {
 		case ctx := <-r.listen:
-			newTopics := make([]string, 0)
-			for _, topic := range ctx.topics {
-				if _, ok := r.routes[topic]; !ok {
-					r.routes[topic] = make([]chan *Message, 0)
-					newTopics = append(newTopics, topic)
-				}
-
-				joined := false
-				for _, up := range r.routes[topic] {
-					if up == ctx.upstream {
-						joined = true
-						break
-					}
-				}
-
-				if !joined {
-					r.routes[topic] = append(r.routes[topic], ctx.upstream)
-				}
-			}
-
-			if len(newTopics) != 0 {
-				if err := pubsub.Subscribe(newTopics...); err != nil {
-					r.errHandler(err, nil)
-				}
-			}
+			r.handleJoin(ctx, pubsub)
 
 		case ctx := <-r.leave:
-			dropTopics := make([]string, 0)
-
-			for _, topic := range ctx.topics {
-				if _, ok := r.routes[topic]; !ok {
-					continue
-				}
-
-				for i, up := range r.routes[topic] {
-					if up == ctx.upstream {
-						r.routes[topic][i] = r.routes[topic][len(r.routes[topic])-1]
-						r.routes[topic][len(r.routes[topic])-1] = nil
-						r.routes[topic] = r.routes[topic][:len(r.routes[topic])-1]
-						break
-					}
-				}
-
-				if len(r.routes[topic]) == 0 {
-					// topic has no subscribers
-					delete(r.routes, topic)
-					dropTopics = append(dropTopics, topic)
-				}
-			}
-
-			if len(dropTopics) != 0 {
-				if err := pubsub.Unsubscribe(dropTopics...); err != nil {
-					r.errHandler(err, nil)
-				}
-			}
+			r.handleLeave(ctx, pubsub)
 
 		case msg := <-channel:
 			if _, ok := r.routes[msg.Channel]; !ok {
@@ -113,8 +62,65 @@ func (r *Redis) Serve() error {
 				// we except that the payload is always valid json
 				upstream <- &Message{Topic: msg.Channel, Payload: []byte(msg.Payload)}
 			}
+
 		case <-r.stop:
 			return nil
+		}
+	}
+}
+
+func (r *Redis) handleLeave(ctx streamContext, pubsub *redis.PubSub) {
+	dropTopics := make([]string, 0)
+	for _, topic := range ctx.topics {
+		if _, ok := r.routes[topic]; !ok {
+			continue
+		}
+
+		for i, up := range r.routes[topic] {
+			if up == ctx.upstream {
+				r.routes[topic][i] = r.routes[topic][len(r.routes[topic])-1]
+				r.routes[topic][len(r.routes[topic])-1] = nil
+				r.routes[topic] = r.routes[topic][:len(r.routes[topic])-1]
+				break
+			}
+		}
+
+		if len(r.routes[topic]) == 0 {
+			// topic has no subscribers
+			delete(r.routes, topic)
+			dropTopics = append(dropTopics, topic)
+		}
+	}
+	if len(dropTopics) != 0 {
+		if err := pubsub.Unsubscribe(dropTopics...); err != nil {
+			r.errHandler(err, nil)
+		}
+	}
+}
+
+func (r *Redis) handleJoin(ctx streamContext, pubsub *redis.PubSub) {
+	newTopics := make([]string, 0)
+	for _, topic := range ctx.topics {
+		if _, ok := r.routes[topic]; !ok {
+			r.routes[topic] = make([]chan *Message, 0)
+			newTopics = append(newTopics, topic)
+		}
+
+		joined := false
+		for _, up := range r.routes[topic] {
+			if up == ctx.upstream {
+				joined = true
+				break
+			}
+		}
+
+		if !joined {
+			r.routes[topic] = append(r.routes[topic], ctx.upstream)
+		}
+	}
+	if len(newTopics) != 0 {
+		if err := pubsub.Subscribe(newTopics...); err != nil {
+			r.errHandler(err, nil)
 		}
 	}
 }

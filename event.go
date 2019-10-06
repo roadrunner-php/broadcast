@@ -17,7 +17,7 @@ const (
 	// EventLeave caused when topic consumption are stopped, context if *TopicEvent.
 	EventLeave
 
-	// EventError when any broadcast error occured, the context is *ErrorEvent.
+	// EventError when any broadcast error occurred, the context is *ErrorEvent.
 	EventError
 )
 

@@ -63,7 +63,7 @@ func (s *Service) AddListener(l func(event int, ctx interface{})) {
 	s.lsns = append(s.lsns, l)
 }
 
-// AddListener attaches server event controller.
+// AddCommand attached custom client command handler.
 func (s *Service) AddCommand(name string, cmd CommandHandler) {
 	s.commands[name] = cmd
 }
@@ -144,55 +144,66 @@ func (s *Service) middleware(f http.HandlerFunc) http.HandlerFunc {
 		defer broker.Unsubscribe(upstream)
 		defer s.throw(EventDisconnect, conn)
 
-		cmd := &Command{}
-		for {
-			if err := conn.ReadJSON(cmd); err != nil {
+		s.serveConn(conn, f, r, broker, upstream)
+	}
+}
+
+// send and receive messages over websocket
+func (s *Service) serveConn(
+	conn *websocket.Conn,
+	f http.HandlerFunc,
+	r *http.Request,
+	broker Broker,
+	upstream chan *Message,
+) {
+	cmd := &Command{}
+	for {
+		if err := conn.ReadJSON(cmd); err != nil {
+			s.handleError(err, conn)
+			return
+		}
+
+		switch cmd.Command {
+		case "handleJoin":
+			topics := make([]string, 0)
+			if err := cmd.Unmarshal(&topics); err != nil {
 				s.handleError(err, conn)
 				return
 			}
 
-			switch cmd.Command {
-			case "join":
-				topics := make([]string, 0)
-				if err := cmd.Unmarshal(&topics); err != nil {
-					s.handleError(err, conn)
-					return
-				}
+			if err := s.assertAccess(f, r, topics...); err != nil {
+				s.handleError(err, conn)
+				return
+			}
 
-				if err := s.assertAccess(f, r, topics...); err != nil {
-					s.handleError(err, conn)
-					return
-				}
+			if len(topics) == 0 {
+				continue
+			}
 
-				if len(topics) == 0 {
-					continue
-				}
+			if err := broker.Subscribe(upstream, topics...); err != nil {
+				s.handleError(err, conn)
+				return
+			}
 
-				if err := broker.Subscribe(upstream, topics...); err != nil {
-					s.handleError(err, conn)
-					return
-				}
+			upstream <- NewMessage("@handleJoin", topics)
+			s.throw(EventJoin, &TopicEvent{Conn: conn, Topics: topics})
+		case "leave":
+			topics := make([]string, 0)
+			if err := cmd.Unmarshal(&topics); err != nil {
+				s.handleError(err, conn)
+				return
+			}
 
-				upstream <- NewMessage("@join", topics)
-				s.throw(EventJoin, &TopicEvent{Conn: conn, Topics: topics})
-			case "leave":
-				topics := make([]string, 0)
-				if err := cmd.Unmarshal(&topics); err != nil {
-					s.handleError(err, conn)
-					return
-				}
+			if len(topics) == 0 {
+				continue
+			}
 
-				if len(topics) == 0 {
-					continue
-				}
-
-				broker.Unsubscribe(upstream, topics...)
-				upstream <- NewMessage("@leave", topics)
-				s.throw(EventLeave, &TopicEvent{Conn: conn, Topics: topics})
-			default:
-				if handler, ok := s.commands[cmd.Command]; ok {
-					handler(upstream, conn, cmd.Data)
-				}
+			broker.Unsubscribe(upstream, topics...)
+			upstream <- NewMessage("@leave", topics)
+			s.throw(EventLeave, &TopicEvent{Conn: conn, Topics: topics})
+		default:
+			if handler, ok := s.commands[cmd.Command]; ok {
+				handler(upstream, conn, cmd.Data)
 			}
 		}
 	}
