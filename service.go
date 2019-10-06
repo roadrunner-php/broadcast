@@ -70,7 +70,7 @@ func (s *Service) AddCommand(name string, cmd CommandHandler) {
 
 // Init service.
 func (s *Service) Init(cfg *Config, r *rpc.Service, h *rhttp.Service, e env.Environment) (bool, error) {
-	if cfg.Path == "" {
+	if cfg.Path == "" || h == nil {
 		return false, nil
 	}
 
@@ -79,8 +79,10 @@ func (s *Service) Init(cfg *Config, r *rpc.Service, h *rhttp.Service, e env.Envi
 	s.connPool = &connPool{conn: make(map[*websocket.Conn]chan *Message)}
 	s.commands = make(map[string]CommandHandler)
 
-	// ensure that underlying kernel knows what route to handle
-	e.SetEnv("RR_BROADCAST_URL", cfg.Path)
+	if e != nil {
+		// ensure that underlying kernel knows what route to handle
+		e.SetEnv("RR_BROADCAST_URL", cfg.Path)
+	}
 	h.AddMiddleware(s.middleware)
 
 	return true, nil
