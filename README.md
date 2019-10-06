@@ -5,6 +5,14 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/spiral/broadcast)](https://goreportcard.com/report/github.com/spiral/broadcast)
 [![Codecov](https://codecov.io/gh/spiral/broadcast/branch/master/graph/badge.svg)](https://codecov.io/gh/spiral/broadcast/)
 
+Features:
+--------
+- Redis and In-Memory brokers
+- Multi-Topic subscription
+- Custom Command handlers
+- Automatic reconnects
+- Prometheus metrics
+
 License:
 --------
 The MIT License (MIT). Please see [`LICENSE`](./LICENSE) for more information. Maintained by [Spiral Scout](https://spiralscout.com).
