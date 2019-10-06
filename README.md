@@ -1,4 +1,4 @@
-# RoadRunner: Broadcasting messages over web-sockets
+# RoadRunner: Broadcast messages over web-sockets
 [![Latest Stable Version](https://poser.pugx.org/spiral/broadcast/version)](https://packagist.org/packages/spiral/broadcast)
 [![GoDoc](https://godoc.org/github.com/spiral/broadcast?status.svg)](https://godoc.org/github.com/spiral/broadcast)
 [![Build Status](https://travis-ci.org/spiral/broadcast.svg?branch=master)](https://travis-ci.org/spiral/broadcast)
