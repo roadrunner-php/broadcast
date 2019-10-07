@@ -44,6 +44,10 @@ func (cfg *testCfg) Unmarshal(out interface{}) error {
 	return json.Unmarshal([]byte(cfg.target), out)
 }
 
+func readStr(m interface{}) string {
+	return strings.TrimRight(string(m.([]byte)), "\n")
+}
+
 func Test_HttpService_Echo(t *testing.T) {
 	logger, _ := test.NewNullLogger()
 	logger.SetLevel(logrus.DebugLevel)
@@ -184,7 +188,7 @@ func Test_Service_JoinTopic(t *testing.T) {
 	assert.NoError(t, err)
 
 	out := <-read
-	assert.Equal(t, `{"topic":"@join","payload":["topic"]}`, strings.TrimRight(string(out.([]byte)), "\n"))
+	assert.Equal(t, `{"topic":"@join","payload":["topic"]}`, readStr(out))
 }
 
 func Test_Service_DenyJoin(t *testing.T) {
