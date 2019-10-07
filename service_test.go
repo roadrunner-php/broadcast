@@ -57,7 +57,7 @@ func Test_HttpService_Echo(t *testing.T) {
 
 	assert.NoError(t, c.Init(&testCfg{
 		http: `{
-			"address": ":6039",
+			"address": ":6041",
 			"workers":{"command": "php tests/worker-ok.php", "pool.numWorkers": 1}
 		}`,
 	}))
@@ -66,7 +66,7 @@ func Test_HttpService_Echo(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 	defer c.Stop()
 
-	req, err := http.NewRequest("GET", "http://localhost:6039/", nil)
+	req, err := http.NewRequest("GET", "http://localhost:6041/", nil)
 	assert.NoError(t, err)
 
 	r, err := http.DefaultClient.Do(req)
@@ -89,7 +89,7 @@ func Test_HttpService_Echo400(t *testing.T) {
 
 	assert.NoError(t, c.Init(&testCfg{
 		http: `{
-			"address": ":6039",
+			"address": ":6040",
 			"workers":{"command": "php tests/worker-deny.php", "pool.numWorkers": 1}
 		}`,
 	}))
@@ -98,7 +98,7 @@ func Test_HttpService_Echo400(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 	defer c.Stop()
 
-	req, err := http.NewRequest("GET", "http://localhost:6039/", nil)
+	req, err := http.NewRequest("GET", "http://localhost:6040/", nil)
 	assert.NoError(t, err)
 
 	r, err := http.DefaultClient.Do(req)
