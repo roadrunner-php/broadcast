@@ -40,6 +40,10 @@ class BroadcastTest extends TestCase
             }
         }
 
+        while (trim(file_get_contents(__DIR__ . '/../log.txt')) !== '{"topic":"@join","payload":["topic"]}') {
+            usleep(1000);
+        }
+
         $br->broadcast(
             new Message("topic", "hello"),
             new Message("topic", ["key" => "value"])
