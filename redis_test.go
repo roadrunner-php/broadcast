@@ -24,7 +24,7 @@ func TestRedis_Error(t *testing.T) {
 
 	assert.NoError(t, c.Init(&testCfg{
 		http: `{
-			"address": ":6039",
+			"address": ":6054",
 			"workers":{"command": "php tests/worker-ok.php", "pool.numWorkers": 1}
 		}`,
 		broadcast: `{"path":"/ws","redis":{"addr":"localhost:6372"}}`,
@@ -44,7 +44,7 @@ func TestRedis_Broadcast(t *testing.T) {
 
 	assert.NoError(t, c.Init(&testCfg{
 		http: `{
-			"address": ":6039",
+			"address": ":6053",
 			"workers":{"command": "php tests/worker-ok.php", "pool.numWorkers": 1}
 		}`,
 		broadcast: `{"path":"/ws","redis":{"addr":"localhost:6379"}}`,
@@ -57,7 +57,7 @@ func TestRedis_Broadcast(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 	defer c.Stop()
 
-	u := url.URL{Scheme: "ws", Host: "localhost:6039", Path: "/ws"}
+	u := url.URL{Scheme: "ws", Host: "localhost:6053", Path: "/ws"}
 
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	assert.NoError(t, err)
@@ -109,7 +109,7 @@ func TestRedis_Broadcast_Error(t *testing.T) {
 
 	assert.NoError(t, c.Init(&testCfg{
 		http: `{
-			"address": ":6039",
+			"address": ":6052",
 			"workers":{"command": "php tests/worker-ok.php", "pool.numWorkers": 1}
 		}`,
 		broadcast: `{"path":"/ws","redis":{"addr":"localhost:6379"}}`,
@@ -122,7 +122,7 @@ func TestRedis_Broadcast_Error(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 	defer c.Stop()
 
-	u := url.URL{Scheme: "ws", Host: "localhost:6039", Path: "/ws"}
+	u := url.URL{Scheme: "ws", Host: "localhost:6052", Path: "/ws"}
 
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	assert.NoError(t, err)

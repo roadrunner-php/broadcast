@@ -24,7 +24,7 @@ func TestMemory_Broadcast(t *testing.T) {
 
 	assert.NoError(t, c.Init(&testCfg{
 		http: `{
-			"address": ":6039",
+			"address": ":6050",
 			"workers":{"command": "php tests/worker-ok.php", "pool.numWorkers": 1}
 		}`,
 		broadcast: `{"path":"/ws"}`,
@@ -37,7 +37,7 @@ func TestMemory_Broadcast(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 	defer c.Stop()
 
-	u := url.URL{Scheme: "ws", Host: "localhost:6039", Path: "/ws"}
+	u := url.URL{Scheme: "ws", Host: "localhost:6050", Path: "/ws"}
 
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	assert.NoError(t, err)
@@ -88,7 +88,7 @@ func TestMemory_Broadcast_Error(t *testing.T) {
 
 	assert.NoError(t, c.Init(&testCfg{
 		http: `{
-			"address": ":6039",
+			"address": ":6051",
 			"workers":{"command": "php tests/worker-ok.php", "pool.numWorkers": 1}
 		}`,
 		broadcast: `{"path":"/ws"}`,
@@ -101,7 +101,7 @@ func TestMemory_Broadcast_Error(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 	defer c.Stop()
 
-	u := url.URL{Scheme: "ws", Host: "localhost:6039", Path: "/ws"}
+	u := url.URL{Scheme: "ws", Host: "localhost:6051", Path: "/ws"}
 
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	assert.NoError(t, err)

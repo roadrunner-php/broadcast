@@ -24,7 +24,7 @@ func TestRCP_Broadcast(t *testing.T) {
 
 	assert.NoError(t, c.Init(&testCfg{
 		http: `{
-			"address": ":6039",
+			"address": ":6056",
 			"workers":{"command": "php tests/worker-ok.php", "pool.numWorkers": 1}
 		}`,
 		broadcast: `{"path":"/ws"}`,
@@ -37,7 +37,7 @@ func TestRCP_Broadcast(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 	defer c.Stop()
 
-	u := url.URL{Scheme: "ws", Host: "localhost:6039", Path: "/ws"}
+	u := url.URL{Scheme: "ws", Host: "localhost:6056", Path: "/ws"}
 
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	assert.NoError(t, err)
@@ -79,7 +79,7 @@ func TestRCP_BroadcastAsync(t *testing.T) {
 
 	assert.NoError(t, c.Init(&testCfg{
 		http: `{
-			"address": ":6039",
+			"address": ":6055",
 			"workers":{"command": "php tests/worker-ok.php", "pool.numWorkers": 1}
 		}`,
 		broadcast: `{"path":"/ws"}`,
@@ -92,7 +92,7 @@ func TestRCP_BroadcastAsync(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 	defer c.Stop()
 
-	u := url.URL{Scheme: "ws", Host: "localhost:6039", Path: "/ws"}
+	u := url.URL{Scheme: "ws", Host: "localhost:6055", Path: "/ws"}
 
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	assert.NoError(t, err)
