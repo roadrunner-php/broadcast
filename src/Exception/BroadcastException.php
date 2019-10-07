@@ -11,5 +11,4 @@ namespace Spiral\Broadcast\Exception;
 
 class BroadcastException extends \RuntimeException
 {
-
 }
