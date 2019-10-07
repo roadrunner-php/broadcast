@@ -8,7 +8,7 @@ type Message struct {
 	Topic string `json:"topic"`
 
 	// Payload to be broadcasted. Must be valid JSON.
-	Payload json.RawMessage `json:"message"`
+	Payload json.RawMessage `json:"payload"`
 }
 
 // NewMessage creates new message with JSON payload.

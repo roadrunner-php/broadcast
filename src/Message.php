@@ -37,7 +37,7 @@ final class Message implements \JsonSerializable
     {
         return [
             'topic'   => $this->topic,
-            'message' => $this->payload
+            'payload' => $this->payload
         ];
     }
 }
