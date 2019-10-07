@@ -30,7 +30,7 @@ class BroadcastTest extends TestCase
         $rpc = new RPC(new SocketRelay("localhost", 6001));
         $br = new Broadcast($rpc);
 
-        $p = new Process("ws-client", dirname(__DIR__));
+        $p = new Process(dirname(__DIR__) . "/ws-client", dirname(__DIR__));
         $p->start();
 
         while (!file_exists(__DIR__ . '/../log.txt')) {
