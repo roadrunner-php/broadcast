@@ -331,7 +331,7 @@ func Test_Service_BadTopics(t *testing.T) {
 		}
 	}()
 
-	assert.NoError(t, conn.WriteMessage(websocket.TextMessage, []byte(`{"cmd":"join", "args":{"hello"}}`)))
+	assert.NoError(t, conn.WriteMessage(websocket.TextMessage, []byte(`{"cmd":"join", "args":"hello"}`)))
 	assert.Error(t, (<-read).(error))
 }
 
@@ -376,7 +376,7 @@ func Test_Service_BadTopicsLeave(t *testing.T) {
 		}
 	}()
 
-	assert.NoError(t, conn.WriteMessage(websocket.TextMessage, []byte(`{"cmd":"leave", "args":{"hello"}}`)))
+	assert.NoError(t, conn.WriteMessage(websocket.TextMessage, []byte(`{"cmd":"leave", "args":"hello"}`)))
 	assert.Error(t, (<-read).(error))
 }
 
