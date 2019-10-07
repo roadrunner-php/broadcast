@@ -18,11 +18,11 @@ install:
 
 before_script:
   - go build -o rr-broadcast cmd/rr-broadcast/main.go
-  - go build -o tests/ws-client tests/ws-client.go
   - ./rr-broadcast serve -c tests/.rr.yaml &
 
 script:
   - go test -v -race -cover -coverprofile=broadcast.txt -covermode=atomic
+  - go build -o tests/ws-client tests/ws-client.go
   - vendor/bin/phpunit --coverage-clover=coverage.xml
   - vendor/bin/phpcs -n --standard=PSR2 --colors src tests
 
