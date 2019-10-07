@@ -76,7 +76,8 @@ func TestRedis_Broadcast(t *testing.T) {
 		}
 	}()
 
-	assert.NoError(t, br.Broker().Broadcast(NewMessage("topic", "hello1"))) // must not be delivered
+	assert.NoError(t, br.Broker().Broadcast(NewMessage("topic2", "hello1"))) // must not be delivered
+	assert.NoError(t, br.Broker().Broadcast(NewMessage("topic", "hello1")))  // must not be delivered
 
 	assert.NoError(t, conn.WriteMessage(websocket.TextMessage, []byte(`{"cmd":"join", "args":["topic"]}`)))
 	assert.Equal(t, `{"topic":"@join","payload":["topic"]}`, readStr(<-read))

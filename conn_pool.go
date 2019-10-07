@@ -21,10 +21,6 @@ func (cp *connPool) connect(conn *websocket.Conn, errHandler func(err error, con
 
 	go func() {
 		for msg := range upstream {
-			if msg == nil {
-				return
-			}
-
 			if err := conn.WriteJSON(msg); err != nil {
 				errHandler(err, conn)
 			}
