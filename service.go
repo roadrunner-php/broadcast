@@ -126,8 +126,13 @@ func (s *Service) Broker() Broker {
 // middleware intercepts websocket connections.
 func (s *Service) middleware(f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		broker := s.broker
-		if r.URL.Path != s.cfg.Path || broker == nil {
+		if r.URL.Path != s.cfg.Path {
+			f(w, r)
+			return
+		}
+
+		broker := s.Broker()
+		if broker == nil {
 			f(w, r)
 			return
 		}
