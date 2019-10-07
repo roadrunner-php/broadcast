@@ -187,8 +187,7 @@ func Test_Service_JoinTopic(t *testing.T) {
 	err = conn.WriteMessage(websocket.TextMessage, []byte(`{"cmd":"join", "args":["topic"]}`))
 	assert.NoError(t, err)
 
-	out := <-read
-	assert.Equal(t, `{"topic":"@join","payload":["topic"]}`, readStr(out))
+	assert.Equal(t, `{"topic":"@join","payload":["topic"]}`, readStr(<-read))
 }
 
 func Test_Service_DenyJoin(t *testing.T) {
@@ -237,4 +236,146 @@ func Test_Service_DenyJoin(t *testing.T) {
 
 	out := <-read
 	assert.Error(t, out.(error))
+}
+
+func Test_Service_EmptyTopics(t *testing.T) {
+	logger, _ := test.NewNullLogger()
+	logger.SetLevel(logrus.DebugLevel)
+
+	c := service.NewContainer(logger)
+	c.Register(env.ID, &env.Service{})
+	c.Register(rrhttp.ID, &rrhttp.Service{})
+	c.Register(ID, &Service{})
+
+	assert.NoError(t, c.Init(&testCfg{
+		http: `{
+			"address": ":6039",
+			"workers":{"command": "php tests/worker-ok.php", "pool.numWorkers": 1}
+		}`,
+		broadcast: `{"path":"/ws"}`,
+	}))
+
+	go func() { c.Serve() }()
+	time.Sleep(time.Millisecond * 100)
+	defer c.Stop()
+
+	u := url.URL{Scheme: "ws", Host: "localhost:6039", Path: "/ws"}
+
+	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	assert.NoError(t, err)
+	defer conn.Close()
+
+	read := make(chan interface{})
+
+	go func() {
+		defer close(read)
+		for {
+			_, message, err := conn.ReadMessage()
+			if err != nil {
+				read <- err
+				continue
+			}
+			read <- message
+		}
+	}()
+
+	assert.NoError(t, conn.WriteMessage(websocket.TextMessage, []byte(`{"cmd":"join", "args":[]}`)))
+
+	assert.NoError(t, conn.WriteMessage(websocket.TextMessage, []byte(`{"cmd":"join", "args":["a"]}`)))
+	assert.Equal(t, `{"topic":"@join","payload":["a"]}`, readStr(<-read))
+
+	assert.NoError(t, conn.WriteMessage(websocket.TextMessage, []byte(`{"cmd":"leave", "args":[]}`)))
+
+	assert.NoError(t, conn.WriteMessage(websocket.TextMessage, []byte(`{"cmd":"leave", "args":["a"]}`)))
+	assert.Equal(t, `{"topic":"@leave","payload":["a"]}`, readStr(<-read))
+}
+
+func Test_Service_BadTopics(t *testing.T) {
+	logger, _ := test.NewNullLogger()
+	logger.SetLevel(logrus.DebugLevel)
+
+	c := service.NewContainer(logger)
+	c.Register(env.ID, &env.Service{})
+	c.Register(rrhttp.ID, &rrhttp.Service{})
+	c.Register(ID, &Service{})
+
+	assert.NoError(t, c.Init(&testCfg{
+		http: `{
+			"address": ":6039",
+			"workers":{"command": "php tests/worker-ok.php", "pool.numWorkers": 1}
+		}`,
+		broadcast: `{"path":"/ws"}`,
+	}))
+
+	go func() { c.Serve() }()
+	time.Sleep(time.Millisecond * 100)
+	defer c.Stop()
+
+	u := url.URL{Scheme: "ws", Host: "localhost:6039", Path: "/ws"}
+
+	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	assert.NoError(t, err)
+	defer conn.Close()
+
+	read := make(chan interface{})
+
+	go func() {
+		defer close(read)
+		for {
+			_, message, err := conn.ReadMessage()
+			if err != nil {
+				read <- err
+				continue
+			}
+			read <- message
+		}
+	}()
+
+	assert.NoError(t, conn.WriteMessage(websocket.TextMessage, []byte(`{"cmd":"join", "args":{"hello"}}`)))
+	assert.Error(t, (<-read).(error))
+}
+
+func Test_Service_BadTopicsLeave(t *testing.T) {
+	logger, _ := test.NewNullLogger()
+	logger.SetLevel(logrus.DebugLevel)
+
+	c := service.NewContainer(logger)
+	c.Register(env.ID, &env.Service{})
+	c.Register(rrhttp.ID, &rrhttp.Service{})
+	c.Register(ID, &Service{})
+
+	assert.NoError(t, c.Init(&testCfg{
+		http: `{
+			"address": ":6039",
+			"workers":{"command": "php tests/worker-ok.php", "pool.numWorkers": 1}
+		}`,
+		broadcast: `{"path":"/ws"}`,
+	}))
+
+	go func() { c.Serve() }()
+	time.Sleep(time.Millisecond * 100)
+	defer c.Stop()
+
+	u := url.URL{Scheme: "ws", Host: "localhost:6039", Path: "/ws"}
+
+	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	assert.NoError(t, err)
+	defer conn.Close()
+
+	read := make(chan interface{})
+
+	go func() {
+		defer close(read)
+		for {
+			_, message, err := conn.ReadMessage()
+			if err != nil {
+				read <- err
+				continue
+			}
+			read <- message
+		}
+	}()
+
+	assert.NoError(t, conn.WriteMessage(websocket.TextMessage, []byte(`{"cmd":"leave", "args":{"hello"}}`)))
+	assert.Error(t, (<-read).(error))
 }
