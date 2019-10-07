@@ -124,11 +124,11 @@ func Test_Service_EnvPath(t *testing.T) {
 			"address": ":6029",
 			"workers":{"command": "php tests/worker-ok.php", "pool.numWorkers": 1}
 		}`,
-		rpc:       `{}`,
+		rpc:       `{"enable":true}`,
 		broadcast: `{"path":"/ws"}`,
 	}))
 
-	go func() { c.Serve() }()
+	go func() { logrus.Print(c.Serve()) }()
 	time.Sleep(time.Millisecond * 100)
 	defer c.Stop()
 
