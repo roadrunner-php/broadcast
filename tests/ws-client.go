@@ -8,24 +8,10 @@ import (
 
 func main() {
 	u := url.URL{Scheme: "ws", Host: "localhost:8080", Path: "/ws"}
-
-	retry := 10
-
-	var conn *websocket.Conn
-	var err error
-	for retry > 0 {
-		conn, _, err = websocket.DefaultDialer.Dial(u.String(), nil)
-		if err != nil {
-			retry--
-		} else {
-			break
-		}
-	}
-
-	if conn == nil {
+	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	if err != nil {
 		panic(err)
 	}
-
 	defer conn.Close()
 
 	read := make(chan interface{})

@@ -18,7 +18,7 @@ install:
 
 before_script:
   - go build -o rr-broadcast cmd/rr-broadcast/main.go
-  - go build -o ws-client tests/ws-client.go
+  - go build -o tests/ws-client tests/ws-client.go
   - ./rr-broadcast serve -c tests/.rr.yaml &
 
 script:
