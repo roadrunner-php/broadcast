@@ -35,10 +35,15 @@ func (cp *connPool) disconnect(conn *websocket.Conn) {
 	cp.mu.Lock()
 	defer cp.mu.Unlock()
 
-	close(cp.conn[conn])
-	conn.Close()
+	upstream, ok := cp.conn[conn]
+	if !ok {
+		return
+	} else {
+		delete(cp.conn, conn)
+	}
 
-	delete(cp.conn, conn)
+	close(upstream)
+	conn.Close()
 }
 
 // close pool and all underlying connections

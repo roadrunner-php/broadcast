@@ -86,6 +86,12 @@ func (s *Service) Init(cfg *Config, r *rpc.Service, h *rhttp.Service, e env.Envi
 		e.SetEnv("RR_BROADCAST_URL", cfg.Path)
 	}
 
+	if r != nil {
+		if err := r.Register(ID, &rpcService{s: s}); err != nil {
+			return false, err
+		}
+	}
+
 	return true, nil
 }
 
