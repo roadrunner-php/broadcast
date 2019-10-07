@@ -379,3 +379,118 @@ func Test_Service_BadTopicsLeave(t *testing.T) {
 	assert.NoError(t, conn.WriteMessage(websocket.TextMessage, []byte(`{"cmd":"leave", "args":{"hello"}}`)))
 	assert.Error(t, (<-read).(error))
 }
+
+func Test_Service_Events(t *testing.T) {
+	logger, _ := test.NewNullLogger()
+	logger.SetLevel(logrus.DebugLevel)
+
+	c := service.NewContainer(logger)
+	c.Register(env.ID, &env.Service{})
+	c.Register(rrhttp.ID, &rrhttp.Service{})
+	c.Register(ID, &Service{})
+
+	assert.NoError(t, c.Init(&testCfg{
+		http: `{
+			"address": ":6039",
+			"workers":{"command": "php tests/worker-ok.php", "pool.numWorkers": 1}
+		}`,
+		broadcast: `{"path":"/ws"}`,
+	}))
+
+	b, _ := c.Get(ID)
+	br := b.(*Service)
+
+	done := make(chan interface{})
+	br.AddListener(func(event int, ctx interface{}) {
+		if event == EventConnect {
+			close(done)
+		}
+	})
+
+	go func() { c.Serve() }()
+	time.Sleep(time.Millisecond * 100)
+	defer c.Stop()
+
+	u := url.URL{Scheme: "ws", Host: "localhost:6039", Path: "/ws"}
+
+	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	assert.NoError(t, err)
+	defer conn.Close()
+
+	<-done
+
+	read := make(chan interface{})
+
+	go func() {
+		defer close(read)
+		for {
+			_, message, err := conn.ReadMessage()
+			if err != nil {
+				return
+			}
+			read <- message
+		}
+	}()
+
+	err = conn.WriteMessage(websocket.TextMessage, []byte(`{"cmd":"join", "args":["topic"]}`))
+	assert.NoError(t, err)
+
+	assert.Equal(t, `{"topic":"@join","payload":["topic"]}`, readStr(<-read))
+}
+
+func Test_Service_Command(t *testing.T) {
+	logger, _ := test.NewNullLogger()
+	logger.SetLevel(logrus.DebugLevel)
+
+	c := service.NewContainer(logger)
+	c.Register(env.ID, &env.Service{})
+	c.Register(rrhttp.ID, &rrhttp.Service{})
+	c.Register(ID, &Service{})
+
+	assert.NoError(t, c.Init(&testCfg{
+		http: `{
+			"address": ":6039",
+			"workers":{"command": "php tests/worker-ok.php", "pool.numWorkers": 1}
+		}`,
+		broadcast: `{"path":"/ws"}`,
+	}))
+
+	b, _ := c.Get(ID)
+	br := b.(*Service)
+
+	br.AddCommand("send", func(ctx *ConnContext, cmd []byte) {
+		assert.Equal(t, []byte(`"send-message"`), cmd)
+		assert.Equal(t, []string{"topic"}, ctx.Topics)
+		assert.NoError(t, br.Broker().Broadcast(NewMessage("topic", "custom-message")))
+	})
+
+	go func() { c.Serve() }()
+	time.Sleep(time.Millisecond * 100)
+	defer c.Stop()
+
+	u := url.URL{Scheme: "ws", Host: "localhost:6039", Path: "/ws"}
+
+	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	assert.NoError(t, err)
+	defer conn.Close()
+
+	read := make(chan interface{})
+
+	go func() {
+		defer close(read)
+		for {
+			_, message, err := conn.ReadMessage()
+			if err != nil {
+				read <- err
+				continue
+			}
+			read <- message
+		}
+	}()
+
+	assert.NoError(t, conn.WriteMessage(websocket.TextMessage, []byte(`{"cmd":"join", "args":["topic"]}`)))
+	assert.Equal(t, `{"topic":"@join","payload":["topic"]}`, readStr(<-read))
+
+	assert.NoError(t, conn.WriteMessage(websocket.TextMessage, []byte(`{"cmd":"send", "args":"send-message"}`)))
+	assert.Equal(t, `{"topic":"topic","payload":"custom-message"}`, readStr(<-read))
+}
