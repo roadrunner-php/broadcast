@@ -19,7 +19,7 @@ func NewMessage(topic string, payload interface{}) *Message {
 	return msg
 }
 
-// Cmd contains information send by user.
+// Command contains information send by user.
 type Command struct {
 	// Cmd type.
 	Cmd string `json:"cmd"`

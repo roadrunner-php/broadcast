@@ -42,10 +42,9 @@ func (cp *connPool) disconnect(conn *websocket.Conn) {
 	upstream, ok := cp.conn[conn]
 	if !ok {
 		return
-	} else {
-		delete(cp.conn, conn)
 	}
 
+	delete(cp.conn, conn)
 	upstream <- nil
 	conn.Close()
 }
