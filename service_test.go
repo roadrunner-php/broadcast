@@ -2,16 +2,18 @@ package broadcast
 
 import (
 	"encoding/json"
+	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/spiral/roadrunner/service"
 	"github.com/spiral/roadrunner/service/env"
 	rrhttp "github.com/spiral/roadrunner/service/http"
 	"github.com/spiral/roadrunner/service/rpc"
-	"io/ioutil"
-
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
 	"net/http"
+	"net/url"
+	"strings"
 	"testing"
 	"time"
 )
@@ -136,4 +138,99 @@ func Test_Service_EnvPath(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 200, r.StatusCode)
 	assert.Equal(t, []byte("/ws"), b)
+}
+
+func Test_Service_JoinTopic(t *testing.T) {
+	logger, _ := test.NewNullLogger()
+	logger.SetLevel(logrus.DebugLevel)
+
+	c := service.NewContainer(logger)
+	c.Register(env.ID, &env.Service{})
+	c.Register(rrhttp.ID, &rrhttp.Service{})
+	c.Register(ID, &Service{})
+
+	assert.NoError(t, c.Init(&testCfg{
+		http: `{
+			"address": ":6039",
+			"workers":{"command": "php tests/worker-ok.php", "pool.numWorkers": 1}
+		}`,
+		broadcast: `{"path":"/ws"}`,
+	}))
+
+	go func() { c.Serve() }()
+	time.Sleep(time.Millisecond * 100)
+	defer c.Stop()
+
+	u := url.URL{Scheme: "ws", Host: "localhost:6039", Path: "/ws"}
+
+	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	assert.NoError(t, err)
+	defer conn.Close()
+
+	read := make(chan interface{})
+
+	go func() {
+		defer close(read)
+		for {
+			_, message, err := conn.ReadMessage()
+			if err != nil {
+				return
+			}
+			read <- message
+		}
+	}()
+
+	err = conn.WriteMessage(websocket.TextMessage, []byte(`{"cmd":"join", "args":["topic"]}`))
+	assert.NoError(t, err)
+
+	out := <-read
+	assert.Equal(t, `{"topic":"@join","payload":["topic"]}`, strings.TrimRight(string(out.([]byte)), "\n"))
+}
+
+func Test_Service_DenyJoin(t *testing.T) {
+	logger, _ := test.NewNullLogger()
+	logger.SetLevel(logrus.DebugLevel)
+
+	c := service.NewContainer(logger)
+	c.Register(env.ID, &env.Service{})
+	c.Register(rrhttp.ID, &rrhttp.Service{})
+	c.Register(ID, &Service{})
+
+	assert.NoError(t, c.Init(&testCfg{
+		http: `{
+			"address": ":6039",
+			"workers":{"command": "php tests/worker-deny.php", "pool.numWorkers": 1}
+		}`,
+		broadcast: `{"path":"/ws"}`,
+	}))
+
+	go func() { c.Serve() }()
+	time.Sleep(time.Millisecond * 100)
+	defer c.Stop()
+
+	u := url.URL{Scheme: "ws", Host: "localhost:6039", Path: "/ws"}
+
+	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	assert.NoError(t, err)
+	defer conn.Close()
+
+	read := make(chan interface{})
+
+	go func() {
+		defer close(read)
+		for {
+			_, message, err := conn.ReadMessage()
+			if err != nil {
+				read <- err
+				continue
+			}
+			read <- message
+		}
+	}()
+
+	err = conn.WriteMessage(websocket.TextMessage, []byte(`{"cmd":"join", "args":["topic"]}`))
+	assert.NoError(t, err)
+
+	out := <-read
+	assert.Error(t, out.(error))
 }

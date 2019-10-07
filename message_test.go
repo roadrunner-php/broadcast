@@ -14,8 +14,8 @@ func TestNewMessage(t *testing.T) {
 
 func TestCommandPayload(t *testing.T) {
 	c := &Command{
-		Command: "test",
-		Data:    []byte(`{"topic":"topic","payload":"message"}`),
+		Cmd:  "test",
+		Args: []byte(`{"topic":"topic","payload":"message"}`),
 	}
 
 	m := new(Message)

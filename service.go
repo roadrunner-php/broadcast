@@ -146,10 +146,6 @@ func (s *Service) middleware(f http.HandlerFunc) http.HandlerFunc {
 		s.throw(EventConnect, conn)
 		upstream := s.connPool.connect(conn, s.handleError)
 
-		defer s.connPool.disconnect(conn)
-		defer broker.Unsubscribe(upstream)
-		defer s.throw(EventDisconnect, conn)
-
 		s.serveConn(conn, f, r, broker, upstream)
 	}
 }
@@ -162,6 +158,10 @@ func (s *Service) serveConn(
 	broker Broker,
 	upstream chan *Message,
 ) {
+	defer s.connPool.disconnect(conn)
+	defer broker.Unsubscribe(upstream)
+	defer s.throw(EventDisconnect, conn)
+
 	connContext := &ConnContext{
 		Upstream: upstream,
 		Conn:     conn,
@@ -175,8 +175,8 @@ func (s *Service) serveConn(
 			return
 		}
 
-		switch cmd.Command {
-		case "handleJoin":
+		switch cmd.Cmd {
+		case "join":
 			topics := make([]string, 0)
 			if err := cmd.Unmarshal(&topics); err != nil {
 				s.handleError(err, conn)
@@ -198,7 +198,7 @@ func (s *Service) serveConn(
 			}
 
 			connContext.addTopic(topics...)
-			upstream <- NewMessage("@handleJoin", topics)
+			upstream <- NewMessage("@join", topics)
 			s.throw(EventJoin, &TopicEvent{Conn: conn, Topics: topics})
 		case "leave":
 			topics := make([]string, 0)
@@ -216,8 +216,8 @@ func (s *Service) serveConn(
 			upstream <- NewMessage("@leave", topics)
 			s.throw(EventLeave, &TopicEvent{Conn: conn, Topics: topics})
 		default:
-			if handler, ok := s.commands[cmd.Command]; ok {
-				handler(connContext, cmd.Data)
+			if handler, ok := s.commands[cmd.Cmd]; ok {
+				handler(connContext, cmd.Args)
 			}
 		}
 	}

@@ -19,16 +19,16 @@ func NewMessage(topic string, payload interface{}) *Message {
 	return msg
 }
 
-// Command contains information send by user.
+// Cmd contains information send by user.
 type Command struct {
-	// Command type.
-	Command string `json:"command"`
+	// Cmd type.
+	Cmd string `json:"cmd"`
 
-	// Data contains command specific payload.
-	Data json.RawMessage `json:"data"`
+	// Args contains command specific payload.
+	Args json.RawMessage `json:"args"`
 }
 
 // Unmarshal command data.
 func (cmd *Command) Unmarshal(v interface{}) error {
-	return json.Unmarshal(cmd.Data, v)
+	return json.Unmarshal(cmd.Args, v)
 }
