@@ -1,10 +1,9 @@
-# broadcast service configuration.rr.yaml
-broadcast:
-  # path to enable web-socker handler middleware
-  path: /ws
+http:
+  address: 0.0.0.0:8080
+  workers:
+    command:  "php worker-ok.php"
+    pool.numWorkers: 1
 
-  # optional, redis broker configuration
-  redis:
-    addr:      "localhost:6379"
-    passsword: ""
-    db:        0
+broadcast:
+  path: /ws
+  redis.addr: "localhost:6379"

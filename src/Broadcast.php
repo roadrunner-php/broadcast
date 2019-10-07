@@ -36,7 +36,7 @@ final class Broadcast implements BroadcastInterface
     {
         try {
             $this->rpc->call(
-                sprintf("%s.Publish", self::SERVICE),
+                sprintf("%s.BroadcastAsync", self::SERVICE),
                 $message
             );
         } catch (ServiceException $e) {

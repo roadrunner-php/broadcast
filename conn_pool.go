@@ -21,6 +21,10 @@ func (cp *connPool) connect(conn *websocket.Conn, errHandler func(err error, con
 
 	go func() {
 		for msg := range upstream {
+			if msg == nil {
+				return
+			}
+
 			if err := conn.WriteJSON(msg); err != nil {
 				errHandler(err, conn)
 			}
@@ -42,7 +46,7 @@ func (cp *connPool) disconnect(conn *websocket.Conn) {
 		delete(cp.conn, conn)
 	}
 
-	close(upstream)
+	upstream <- nil
 	conn.Close()
 }
 
@@ -53,7 +57,7 @@ func (cp *connPool) close() {
 
 	for conn, upstream := range cp.conn {
 		delete(cp.conn, conn)
-		close(upstream)
+		upstream <- nil
 		conn.Close()
 	}
 }

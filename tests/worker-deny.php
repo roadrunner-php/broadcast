@@ -1,7 +1,7 @@
 <?php
 // worker.php
 ini_set('display_errors', 'stderr');
-include "vendor/autoload.php";
+include __DIR__ . "/../vendor/autoload.php";
 
 $relay = new Spiral\Goridge\StreamRelay(STDIN, STDOUT);
 $psr7 = new Spiral\RoadRunner\PSR7Client(new Spiral\RoadRunner\Worker($relay));
