@@ -121,7 +121,7 @@ func Test_Service_EnvPath(t *testing.T) {
 
 	assert.NoError(t, c.Init(&testCfg{
 		http: `{
-			"address": ":6039",
+			"address": ":6029",
 			"workers":{"command": "php tests/worker-ok.php", "pool.numWorkers": 1}
 		}`,
 		rpc:       `{}`,
@@ -132,7 +132,7 @@ func Test_Service_EnvPath(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 	defer c.Stop()
 
-	req, err := http.NewRequest("GET", "http://localhost:6039/", nil)
+	req, err := http.NewRequest("GET", "http://localhost:6029/", nil)
 	assert.NoError(t, err)
 
 	r, err := http.DefaultClient.Do(req)
@@ -157,7 +157,7 @@ func Test_Service_JoinTopic(t *testing.T) {
 
 	assert.NoError(t, c.Init(&testCfg{
 		http: `{
-			"address": ":6039",
+			"address": ":6038",
 			"workers":{"command": "php tests/worker-ok.php", "pool.numWorkers": 1}
 		}`,
 		broadcast: `{"path":"/ws"}`,
@@ -167,7 +167,7 @@ func Test_Service_JoinTopic(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 	defer c.Stop()
 
-	u := url.URL{Scheme: "ws", Host: "localhost:6039", Path: "/ws"}
+	u := url.URL{Scheme: "ws", Host: "localhost:6038", Path: "/ws"}
 
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	assert.NoError(t, err)
@@ -203,7 +203,7 @@ func Test_Service_DenyJoin(t *testing.T) {
 
 	assert.NoError(t, c.Init(&testCfg{
 		http: `{
-			"address": ":6039",
+			"address": ":6037",
 			"workers":{"command": "php tests/worker-deny.php", "pool.numWorkers": 1}
 		}`,
 		broadcast: `{"path":"/ws"}`,
@@ -213,7 +213,7 @@ func Test_Service_DenyJoin(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 	defer c.Stop()
 
-	u := url.URL{Scheme: "ws", Host: "localhost:6039", Path: "/ws"}
+	u := url.URL{Scheme: "ws", Host: "localhost:6037", Path: "/ws"}
 
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	assert.NoError(t, err)
@@ -251,7 +251,7 @@ func Test_Service_EmptyTopics(t *testing.T) {
 
 	assert.NoError(t, c.Init(&testCfg{
 		http: `{
-			"address": ":6039",
+			"address": ":6036",
 			"workers":{"command": "php tests/worker-ok.php", "pool.numWorkers": 1}
 		}`,
 		broadcast: `{"path":"/ws"}`,
@@ -261,7 +261,7 @@ func Test_Service_EmptyTopics(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 	defer c.Stop()
 
-	u := url.URL{Scheme: "ws", Host: "localhost:6039", Path: "/ws"}
+	u := url.URL{Scheme: "ws", Host: "localhost:6036", Path: "/ws"}
 
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	assert.NoError(t, err)
@@ -303,7 +303,7 @@ func Test_Service_BadTopics(t *testing.T) {
 
 	assert.NoError(t, c.Init(&testCfg{
 		http: `{
-			"address": ":6039",
+			"address": ":6035",
 			"workers":{"command": "php tests/worker-ok.php", "pool.numWorkers": 1}
 		}`,
 		broadcast: `{"path":"/ws"}`,
@@ -313,7 +313,7 @@ func Test_Service_BadTopics(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 	defer c.Stop()
 
-	u := url.URL{Scheme: "ws", Host: "localhost:6039", Path: "/ws"}
+	u := url.URL{Scheme: "ws", Host: "localhost:6035", Path: "/ws"}
 
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	assert.NoError(t, err)
@@ -348,7 +348,7 @@ func Test_Service_BadTopicsLeave(t *testing.T) {
 
 	assert.NoError(t, c.Init(&testCfg{
 		http: `{
-			"address": ":6039",
+			"address": ":6034",
 			"workers":{"command": "php tests/worker-ok.php", "pool.numWorkers": 1}
 		}`,
 		broadcast: `{"path":"/ws"}`,
@@ -358,7 +358,7 @@ func Test_Service_BadTopicsLeave(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 	defer c.Stop()
 
-	u := url.URL{Scheme: "ws", Host: "localhost:6039", Path: "/ws"}
+	u := url.URL{Scheme: "ws", Host: "localhost:6034", Path: "/ws"}
 
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	assert.NoError(t, err)
@@ -393,7 +393,7 @@ func Test_Service_Events(t *testing.T) {
 
 	assert.NoError(t, c.Init(&testCfg{
 		http: `{
-			"address": ":6039",
+			"address": ":6033",
 			"workers":{"command": "php tests/worker-ok.php", "pool.numWorkers": 1}
 		}`,
 		broadcast: `{"path":"/ws"}`,
@@ -413,7 +413,7 @@ func Test_Service_Events(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 	defer c.Stop()
 
-	u := url.URL{Scheme: "ws", Host: "localhost:6039", Path: "/ws"}
+	u := url.URL{Scheme: "ws", Host: "localhost:6033", Path: "/ws"}
 
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	assert.NoError(t, err)
@@ -451,7 +451,7 @@ func Test_Service_Command(t *testing.T) {
 
 	assert.NoError(t, c.Init(&testCfg{
 		http: `{
-			"address": ":6039",
+			"address": ":6032",
 			"workers":{"command": "php tests/worker-ok.php", "pool.numWorkers": 1}
 		}`,
 		broadcast: `{"path":"/ws"}`,
@@ -470,7 +470,7 @@ func Test_Service_Command(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 	defer c.Stop()
 
-	u := url.URL{Scheme: "ws", Host: "localhost:6039", Path: "/ws"}
+	u := url.URL{Scheme: "ws", Host: "localhost:6032", Path: "/ws"}
 
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	assert.NoError(t, err)
