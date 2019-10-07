@@ -255,12 +255,12 @@ func (s *Service) throw(event int, ctx interface{}) {
 // in case of full success.
 func (s *Service) assertServerAccess(f http.HandlerFunc, r *http.Request) (error, *responseWrapper) {
 	w := newResponseWrapper()
-	if err := attributes.Set(r, "cmd:joinServer", true); err != nil {
+	if err := attributes.Set(r, "broadcast:joinServer", true); err != nil {
 		return err, nil
 	}
 
 	f(w, r)
-	delete(attributes.All(r), "cmd:joinServer")
+	delete(attributes.All(r), "broadcast:joinServer")
 
 	if !w.IsOK() {
 		return nil, w
@@ -273,12 +273,12 @@ func (s *Service) assertServerAccess(f http.HandlerFunc, r *http.Request) (error
 // the decision to authorize user will be based on response code (200).
 func (s *Service) assertAccess(f http.HandlerFunc, r *http.Request, channels ...string) error {
 	w := newResponseWrapper()
-	if err := attributes.Set(r, "cmd:joinTopics", strings.Join(channels, ",")); err != nil {
+	if err := attributes.Set(r, "broadcast:joinTopics", strings.Join(channels, ",")); err != nil {
 		return err
 	}
 
 	f(w, r)
-	delete(attributes.All(r), "cmd:joinTopics")
+	delete(attributes.All(r), "broadcast:joinTopics")
 
 	if !w.IsOK() {
 		return errors.New(string(w.Body()))

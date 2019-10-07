@@ -10,7 +10,7 @@ while ($req = $psr7->acceptRequest()) {
     try {
         $resp = new \Zend\Diactoros\Response();
 
-        if ($req->getAttribute('cmd:joinServer')) {
+        if ($req->getAttribute('broadcast:joinServer')) {
             $psr7->respond($resp->withStatus(200));
         } else {
             $psr7->respond($resp->withStatus(401));
