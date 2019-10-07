@@ -2,6 +2,7 @@ package broadcast
 
 import (
 	"bytes"
+	"io"
 	"net/http"
 )
 
@@ -16,6 +17,18 @@ func newResponseWrapper() *responseWrapper {
 		buffer: bytes.NewBuffer(nil),
 		header: make(http.Header),
 	}
+}
+
+// copy all content to parent response writer.
+func (w *responseWrapper) copy(rw http.ResponseWriter) {
+	rw.WriteHeader(w.status)
+
+	for k, v := range w.header {
+		for _, vv := range v {
+			rw.Header().Add(k, vv)
+		}
+	}
+	io.Copy(rw, w.buffer)
 }
 
 // Header returns the header map that will be sent by WriteHeader.

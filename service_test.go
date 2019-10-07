@@ -90,7 +90,7 @@ func Test_HttpService_Echo400(t *testing.T) {
 	assert.NoError(t, c.Init(&testCfg{
 		http: `{
 			"address": ":6040",
-			"workers":{"command": "php tests/worker-deny.php", "pool.numWorkers": 1}
+			"workers":{"command": "php tests/worker-stop.php", "pool.numWorkers": 1}
 		}`,
 	}))
 
@@ -238,6 +238,33 @@ func Test_Service_DenyJoin(t *testing.T) {
 
 	out := <-read
 	assert.Error(t, out.(error))
+}
+
+func Test_Service_DenyJoinServer(t *testing.T) {
+	logger, _ := test.NewNullLogger()
+	logger.SetLevel(logrus.DebugLevel)
+
+	c := service.NewContainer(logger)
+	c.Register(env.ID, &env.Service{})
+	c.Register(rrhttp.ID, &rrhttp.Service{})
+	c.Register(ID, &Service{})
+
+	assert.NoError(t, c.Init(&testCfg{
+		http: `{
+			"address": ":6037",
+			"workers":{"command": "php tests/worker-stop.php", "pool.numWorkers": 1}
+		}`,
+		broadcast: `{"path":"/ws"}`,
+	}))
+
+	go func() { c.Serve() }()
+	time.Sleep(time.Millisecond * 100)
+	defer c.Stop()
+
+	u := url.URL{Scheme: "ws", Host: "localhost:6037", Path: "/ws"}
+
+	_, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	assert.Error(t, err)
 }
 
 func Test_Service_EmptyTopics(t *testing.T) {

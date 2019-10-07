@@ -143,6 +143,16 @@ func (s *Service) middleware(f http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
+		if err, rw := s.assertServerAccess(f, r); err != nil || rw != nil {
+			if rw != nil {
+				rw.copy(w)
+				return
+			}
+
+			s.handleError(err, nil)
+			return
+		}
+
 		conn, err := s.upgrade.Upgrade(w, r, nil)
 		if err != nil {
 			s.handleError(err, nil)
@@ -241,15 +251,34 @@ func (s *Service) throw(event int, ctx interface{}) {
 	}
 }
 
+// assertServerAccess checks if user can join server and returns error and body if user can not. Returns (nil, nil)
+// in case of full success.
+func (s *Service) assertServerAccess(f http.HandlerFunc, r *http.Request) (error, *responseWrapper) {
+	w := newResponseWrapper()
+	if err := attributes.Set(r, "cmd:joinServer", true); err != nil {
+		return err, nil
+	}
+
+	f(w, r)
+	delete(attributes.All(r), "cmd:joinServer")
+
+	if !w.IsOK() {
+		return nil, w
+	}
+
+	return nil, nil
+}
+
 // assertAccess checks if user can access given channel, the application will receive all user headers and cookies.
 // the decision to authorize user will be based on response code (200).
 func (s *Service) assertAccess(f http.HandlerFunc, r *http.Request, channels ...string) error {
 	w := newResponseWrapper()
-	if err := attributes.Set(r, "joinTopics", strings.Join(channels, ",")); err != nil {
+	if err := attributes.Set(r, "cmd:joinTopics", strings.Join(channels, ",")); err != nil {
 		return err
 	}
 
 	f(w, r)
+	delete(attributes.All(r), "cmd:joinTopics")
 
 	if !w.IsOK() {
 		return errors.New(string(w.Body()))
