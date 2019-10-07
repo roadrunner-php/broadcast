@@ -115,6 +115,7 @@ func Test_Service_EnvPath(t *testing.T) {
 
 	c := service.NewContainer(logger)
 	c.Register(env.ID, &env.Service{})
+	c.Register(rpc.ID, &rpc.Service{})
 	c.Register(rrhttp.ID, &rrhttp.Service{})
 	c.Register(ID, &Service{})
 
@@ -123,6 +124,7 @@ func Test_Service_EnvPath(t *testing.T) {
 			"address": ":6039",
 			"workers":{"command": "php tests/worker-ok.php", "pool.numWorkers": 1}
 		}`,
+		rpc:       `{}`,
 		broadcast: `{"path":"/ws"}`,
 	}))
 

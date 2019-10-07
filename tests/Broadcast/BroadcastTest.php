@@ -11,6 +11,7 @@ namespace Spiral\Broadcast\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Spiral\Broadcast\Broadcast;
+use Spiral\Broadcast\Exception\BroadcastException;
 use Spiral\Broadcast\Message;
 use Spiral\Goridge\RPC;
 use Spiral\Goridge\SocketRelay;
@@ -58,5 +59,16 @@ class BroadcastTest extends TestCase
 {"topic":"topic","payload":{"key":"value"}}
 {"topic":"@leave","payload":["topic"]}
 ', file_get_contents(__DIR__ . '/../log.txt'));
+    }
+
+    public function testBroadcastException()
+    {
+        $rpc = new RPC(new SocketRelay("localhost", 6002));
+        $br = new Broadcast($rpc);
+
+        $this->expectException(BroadcastException::class);
+        $br->broadcast(
+            new Message("topic", "hello")
+        );
     }
 }

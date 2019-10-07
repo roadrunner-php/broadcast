@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Spiral\Broadcast;
 
 use Spiral\Broadcast\Exception\BroadcastException;
+use Spiral\Goridge\Exceptions\RelayException;
 use Spiral\Goridge\Exceptions\ServiceException;
 use Spiral\Goridge\RPC;
 
@@ -39,7 +40,7 @@ final class Broadcast implements BroadcastInterface
                 sprintf("%s.BroadcastAsync", self::SERVICE),
                 $message
             );
-        } catch (ServiceException $e) {
+        } catch (ServiceException|RelayException $e) {
             throw new BroadcastException($e->getMessage(), $e->getCode(), $e);
         }
     }
