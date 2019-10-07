@@ -239,7 +239,7 @@ func (s *Service) throw(event int, ctx interface{}) {
 // the decision to authorize user will be based on response code (200).
 func (s *Service) assertAccess(f http.HandlerFunc, r *http.Request, channels ...string) error {
 	w := newResponseWrapper()
-	if err := attributes.Set(r, "listenChannels", strings.Join(channels, ",")); err != nil {
+	if err := attributes.Set(r, "joinTopics", strings.Join(channels, ",")); err != nil {
 		return err
 	}
 
