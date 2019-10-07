@@ -7,7 +7,7 @@
 
 Features:
 --------
-- Topic access verification using PHP workers
+- Server and topic access verification via PHP
 - Redis and In-Memory brokers
 - Multi-Topic subscription
 - Custom Command handlers
