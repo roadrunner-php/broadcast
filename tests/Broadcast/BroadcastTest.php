@@ -35,6 +35,9 @@ class BroadcastTest extends TestCase
 
         while (!file_exists(__DIR__ . '/../log.txt')) {
             usleep(1000);
+            if ($p->getErrorOutput() !== "") {
+                $this->fail($p->getErrorOutput());
+            }
         }
 
         $br->broadcast(
