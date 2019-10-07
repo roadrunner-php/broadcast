@@ -1,6 +1,6 @@
 package broadcast
 
-type streamContext struct {
+type subscriber struct {
 	upstream chan *Message
 	topics   []string
 }
@@ -9,7 +9,7 @@ type streamContext struct {
 type Memory struct {
 	routes        map[string][]chan *Message
 	messages      chan *Message
-	listen, leave chan streamContext
+	listen, leave chan subscriber
 	stop          chan interface{}
 }
 
@@ -18,8 +18,8 @@ func memoryBroker() *Memory {
 	return &Memory{
 		routes:   make(map[string][]chan *Message),
 		messages: make(chan *Message),
-		listen:   make(chan streamContext),
-		leave:    make(chan streamContext),
+		listen:   make(chan subscriber),
+		leave:    make(chan subscriber),
 		stop:     make(chan interface{}),
 	}
 }
@@ -47,14 +47,14 @@ func (m *Memory) Serve() error {
 	}
 }
 
-func (m *Memory) handleLeave(ctx streamContext) {
-	for _, topic := range ctx.topics {
+func (m *Memory) handleLeave(sb subscriber) {
+	for _, topic := range sb.topics {
 		if _, ok := m.routes[topic]; !ok {
 			continue
 		}
 
 		for i, up := range m.routes[topic] {
-			if up == ctx.upstream {
+			if up == sb.upstream {
 				m.routes[topic][i] = m.routes[topic][len(m.routes[topic])-1]
 				m.routes[topic][len(m.routes[topic])-1] = nil
 				m.routes[topic] = m.routes[topic][:len(m.routes[topic])-1]
@@ -69,22 +69,22 @@ func (m *Memory) handleLeave(ctx streamContext) {
 	}
 }
 
-func (m *Memory) handleJoin(ctx streamContext) {
-	for _, topic := range ctx.topics {
+func (m *Memory) handleJoin(sb subscriber) {
+	for _, topic := range sb.topics {
 		if _, ok := m.routes[topic]; !ok {
 			m.routes[topic] = make([]chan *Message, 0)
 		}
 
 		joined := false
 		for _, up := range m.routes[topic] {
-			if up == ctx.upstream {
+			if up == sb.upstream {
 				joined = true
 				break
 			}
 		}
 
 		if !joined {
-			m.routes[topic] = append(m.routes[topic], ctx.upstream)
+			m.routes[topic] = append(m.routes[topic], sb.upstream)
 		}
 	}
 }
@@ -96,13 +96,13 @@ func (m *Memory) Stop() {
 
 // Subscribe broker to one or multiple channels.
 func (m *Memory) Subscribe(upstream chan *Message, topics ...string) error {
-	m.listen <- streamContext{upstream: upstream, topics: topics}
+	m.listen <- subscriber{upstream: upstream, topics: topics}
 	return nil
 }
 
 // Unsubscribe broker from one or multiple channels.
 func (m *Memory) Unsubscribe(upstream chan *Message, topics ...string) {
-	m.leave <- streamContext{upstream: upstream, topics: topics}
+	m.leave <- subscriber{upstream: upstream, topics: topics}
 }
 
 // Broadcast one or multiple messages.

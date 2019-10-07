@@ -11,7 +11,7 @@ type Redis struct {
 	errHandler    func(err error, conn *websocket.Conn)
 	routes        map[string][]chan *Message
 	messages      chan *Message
-	listen, leave chan streamContext
+	listen, leave chan subscriber
 	stop          chan interface{}
 }
 
@@ -34,8 +34,8 @@ func redisBroker(cfg *RedisConfig, errHandler func(err error, conn *websocket.Co
 		errHandler: errHandler,
 		routes:     make(map[string][]chan *Message),
 		messages:   make(chan *Message),
-		listen:     make(chan streamContext),
-		leave:      make(chan streamContext),
+		listen:     make(chan subscriber),
+		leave:      make(chan subscriber),
 		stop:       make(chan interface{}),
 	}, nil
 }
@@ -69,15 +69,15 @@ func (r *Redis) Serve() error {
 	}
 }
 
-func (r *Redis) handleLeave(ctx streamContext, pubsub *redis.PubSub) {
+func (r *Redis) handleLeave(sb subscriber, pubsub *redis.PubSub) {
 	dropTopics := make([]string, 0)
-	for _, topic := range ctx.topics {
+	for _, topic := range sb.topics {
 		if _, ok := r.routes[topic]; !ok {
 			continue
 		}
 
 		for i, up := range r.routes[topic] {
-			if up == ctx.upstream {
+			if up == sb.upstream {
 				r.routes[topic][i] = r.routes[topic][len(r.routes[topic])-1]
 				r.routes[topic][len(r.routes[topic])-1] = nil
 				r.routes[topic] = r.routes[topic][:len(r.routes[topic])-1]
@@ -98,9 +98,9 @@ func (r *Redis) handleLeave(ctx streamContext, pubsub *redis.PubSub) {
 	}
 }
 
-func (r *Redis) handleJoin(ctx streamContext, pubsub *redis.PubSub) {
+func (r *Redis) handleJoin(sb subscriber, pubsub *redis.PubSub) {
 	newTopics := make([]string, 0)
-	for _, topic := range ctx.topics {
+	for _, topic := range sb.topics {
 		if _, ok := r.routes[topic]; !ok {
 			r.routes[topic] = make([]chan *Message, 0)
 			newTopics = append(newTopics, topic)
@@ -108,14 +108,14 @@ func (r *Redis) handleJoin(ctx streamContext, pubsub *redis.PubSub) {
 
 		joined := false
 		for _, up := range r.routes[topic] {
-			if up == ctx.upstream {
+			if up == sb.upstream {
 				joined = true
 				break
 			}
 		}
 
 		if !joined {
-			r.routes[topic] = append(r.routes[topic], ctx.upstream)
+			r.routes[topic] = append(r.routes[topic], sb.upstream)
 		}
 	}
 	if len(newTopics) != 0 {
@@ -132,13 +132,13 @@ func (r *Redis) Stop() {
 
 // Subscribe broker to one or multiple channels.
 func (r *Redis) Subscribe(upstream chan *Message, topics ...string) error {
-	r.listen <- streamContext{upstream: upstream, topics: topics}
+	r.listen <- subscriber{upstream: upstream, topics: topics}
 	return nil
 }
 
 // Unsubscribe broker from one or multiple channels.
 func (r *Redis) Unsubscribe(upstream chan *Message, topics ...string) {
-	r.leave <- streamContext{upstream: upstream, topics: topics}
+	r.leave <- subscriber{upstream: upstream, topics: topics}
 }
 
 // Broadcast one or multiple messages.

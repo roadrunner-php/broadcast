@@ -34,7 +34,7 @@ type Broker interface {
 }
 
 // CommandHandler handles custom commands.
-type CommandHandler func(upstream chan *Message, conn *websocket.Conn, data []byte)
+type CommandHandler func(ctx *ConnContext, cmd []byte)
 
 // Service manages even broadcasting over websockets.
 type Service struct {
@@ -156,6 +156,12 @@ func (s *Service) serveConn(
 	broker Broker,
 	upstream chan *Message,
 ) {
+	connContext := &ConnContext{
+		Upstream: upstream,
+		Conn:     conn,
+		Topics:   make([]string, 0),
+	}
+
 	cmd := &Command{}
 	for {
 		if err := conn.ReadJSON(cmd); err != nil {
@@ -185,6 +191,7 @@ func (s *Service) serveConn(
 				return
 			}
 
+			connContext.addTopic(topics...)
 			upstream <- NewMessage("@handleJoin", topics)
 			s.throw(EventJoin, &TopicEvent{Conn: conn, Topics: topics})
 		case "leave":
@@ -198,12 +205,13 @@ func (s *Service) serveConn(
 				continue
 			}
 
+			connContext.dropTopic(topics...)
 			broker.Unsubscribe(upstream, topics...)
 			upstream <- NewMessage("@leave", topics)
 			s.throw(EventLeave, &TopicEvent{Conn: conn, Topics: topics})
 		default:
 			if handler, ok := s.commands[cmd.Command]; ok {
-				handler(upstream, conn, cmd.Data)
+				handler(connContext, cmd.Data)
 			}
 		}
 	}
