@@ -1,6 +1,9 @@
 package broadcast
 
-import "github.com/spiral/roadrunner/service"
+import (
+	"errors"
+	"github.com/spiral/roadrunner/service"
+)
 
 // Config configures the broadcast extension.
 type Config struct {
@@ -33,5 +36,9 @@ type RedisConfig struct {
 }
 
 func (r *RedisConfig) isValid() error {
+	if r.Addr == "" {
+		return errors.New("redis addr must be specified")
+	}
+
 	return nil
 }
