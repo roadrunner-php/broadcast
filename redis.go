@@ -49,10 +49,10 @@ func (r *Redis) Serve() error {
 		select {
 		case ctx := <-r.listen:
 			r.handleJoin(ctx, pubsub)
-
+			close(ctx.done)
 		case ctx := <-r.leave:
 			r.handleLeave(ctx, pubsub)
-
+			close(ctx.done)
 		case msg := <-channel:
 			if _, ok := r.routes[msg.Channel]; !ok {
 				continue
@@ -132,13 +132,20 @@ func (r *Redis) Stop() {
 
 // Subscribe broker to one or multiple channels.
 func (r *Redis) Subscribe(upstream chan *Message, topics ...string) error {
-	r.listen <- subscriber{upstream: upstream, topics: topics}
+	ctx := subscriber{upstream: upstream, topics: topics, done: make(chan interface{})}
+
+	r.listen <- ctx
+	<-ctx.done
+
 	return nil
 }
 
 // Unsubscribe broker from one or multiple channels.
 func (r *Redis) Unsubscribe(upstream chan *Message, topics ...string) {
-	r.leave <- subscriber{upstream: upstream, topics: topics}
+	ctx := subscriber{upstream: upstream, topics: topics, done: make(chan interface{})}
+
+	r.leave <- ctx
+	<-ctx.done
 }
 
 // Broadcast one or multiple messages.

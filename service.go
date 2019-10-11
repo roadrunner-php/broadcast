@@ -169,15 +169,17 @@ func (s *Service) serveConn(
 	broker Broker,
 	upstream chan *Message,
 ) {
-	defer s.connPool.disconnect(conn)
-	defer broker.Unsubscribe(upstream)
-	defer s.throw(EventDisconnect, conn)
-
 	connContext := &ConnContext{
 		Upstream: upstream,
 		Conn:     conn,
 		Topics:   make([]string, 0),
 	}
+
+	defer func() {
+		s.throw(EventDisconnect, conn)
+		broker.Unsubscribe(upstream, connContext.Topics...)
+		s.connPool.disconnect(conn)
+	}()
 
 	cmd := &Command{}
 	for {

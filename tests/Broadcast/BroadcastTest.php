@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Spiral Framework.
  *
@@ -19,24 +20,24 @@ use Symfony\Component\Process\Process;
 
 class BroadcastTest extends TestCase
 {
-    public function tearDown()
+    public function tearDown(): void
     {
         if (file_exists(__DIR__ . '/../log.txt')) {
             unlink(__DIR__ . '/../log.txt');
         }
     }
 
-    public function testBroadcast()
+    public function testBroadcast(): void
     {
-        $rpc = new RPC(new SocketRelay("localhost", 6001));
+        $rpc = new RPC(new SocketRelay('localhost', 6001));
         $br = new Broadcast($rpc);
 
-        $p = new Process(dirname(__DIR__) . "/ws-client", dirname(__DIR__));
+        $p = new Process(dirname(__DIR__) . '/ws-client', dirname(__DIR__));
         $p->start();
 
         while (!file_exists(__DIR__ . '/../log.txt')) {
             usleep(1000);
-            if ($p->getErrorOutput() !== "") {
+            if ($p->getErrorOutput() !== '') {
                 $this->fail($p->getErrorOutput());
             }
         }
@@ -46,8 +47,8 @@ class BroadcastTest extends TestCase
         }
 
         $br->broadcast(
-            new Message("topic", "hello"),
-            new Message("topic", ["key" => "value"])
+            new Message('topic', 'hello'),
+            new Message('topic', ['key' => 'value'])
         );
 
         while ($p->isRunning()) {
@@ -61,14 +62,14 @@ class BroadcastTest extends TestCase
 ', file_get_contents(__DIR__ . '/../log.txt'));
     }
 
-    public function testBroadcastException()
+    public function testBroadcastException(): void
     {
-        $rpc = new RPC(new SocketRelay("localhost", 6002));
+        $rpc = new RPC(new SocketRelay('localhost', 6002));
         $br = new Broadcast($rpc);
 
         $this->expectException(BroadcastException::class);
         $br->broadcast(
-            new Message("topic", "hello")
+            new Message('topic', 'hello')
         );
     }
 }

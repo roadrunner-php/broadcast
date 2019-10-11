@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Spiral Framework.
  *
@@ -37,10 +38,10 @@ final class Broadcast implements BroadcastInterface
     {
         try {
             $this->rpc->call(
-                sprintf("%s.BroadcastAsync", self::SERVICE),
+                sprintf('%s.BroadcastAsync', self::SERVICE),
                 $message
             );
-        } catch (ServiceException|RelayException $e) {
+        } catch (ServiceException | RelayException $e) {
             throw new BroadcastException($e->getMessage(), $e->getCode(), $e);
         }
     }

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Spiral Framework.
  *
@@ -14,7 +15,7 @@ use Spiral\Broadcast\Message;
 
 class MessageTest extends TestCase
 {
-    public function testSerialize()
+    public function testSerialize(): void
     {
         $m = new Message('topic', ['hello' => 'world']);
         $this->assertSame('{"topic":"topic","payload":{"hello":"world"}}', json_encode($m));

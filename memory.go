@@ -2,6 +2,7 @@ package broadcast
 
 type subscriber struct {
 	upstream chan *Message
+	done     chan interface{}
 	topics   []string
 }
 
@@ -30,8 +31,10 @@ func (m *Memory) Serve() error {
 		select {
 		case ctx := <-m.listen:
 			m.handleJoin(ctx)
+			close(ctx.done)
 		case ctx := <-m.leave:
 			m.handleLeave(ctx)
+			close(ctx.done)
 		case msg := <-m.messages:
 			if _, ok := m.routes[msg.Topic]; !ok {
 				continue
@@ -96,13 +99,20 @@ func (m *Memory) Stop() {
 
 // Subscribe broker to one or multiple channels.
 func (m *Memory) Subscribe(upstream chan *Message, topics ...string) error {
-	m.listen <- subscriber{upstream: upstream, topics: topics}
+	ctx := subscriber{upstream: upstream, topics: topics, done: make(chan interface{})}
+
+	m.listen <- ctx
+	<-ctx.done
+
 	return nil
 }
 
 // Unsubscribe broker from one or multiple channels.
 func (m *Memory) Unsubscribe(upstream chan *Message, topics ...string) {
-	m.leave <- subscriber{upstream: upstream, topics: topics}
+	ctx := subscriber{upstream: upstream, topics: topics, done: make(chan interface{})}
+
+	m.leave <- ctx
+	<-ctx.done
 }
 
 // Broadcast one or multiple messages.
