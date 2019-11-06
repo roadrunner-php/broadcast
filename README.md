@@ -9,8 +9,6 @@ Features:
 --------
 - Produce and consume events
 - Subscribe to topic from Golang or PHP
-- State Machine support, distributed lock support
-- Distributed async callbacks
 - Multi-Topic subscription
 - WebSocket support
     - Server and topic access verification via PHP
