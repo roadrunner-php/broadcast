@@ -147,7 +147,7 @@ func (r *Redis) Unsubscribe(upstream chan *Message, topics ...string) {
 	<-ctx.done
 }
 
-// Broadcast one or multiple messages.
+// Broadcast one or multiple Messages.
 func (r *Redis) Broadcast(messages ...*Message) error {
 	for _, msg := range messages {
 		if err := r.client.Publish(msg.Topic, []byte(msg.Payload)).Err(); err != nil {

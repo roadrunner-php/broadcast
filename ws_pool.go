@@ -70,7 +70,7 @@ func (ws *wsPool) middleware(f http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-// send and receive messages over websocket
+// send and receive Messages over websocket
 func (ws *wsPool) serveConn(
 	conn *websocket.Conn,
 	f http.HandlerFunc,

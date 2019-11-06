@@ -124,7 +124,7 @@ func Test_Service_EnvPath(t *testing.T) {
 			"address": ":6029",
 			"workers":{"command": "php tests/worker-ok.php", "pool.numWorkers": 1}
 		}`,
-		rpc:       `{"listen":"tcp://127.0.0.1:6002"}`,
+		rpc:       `{"Messages":"tcp://127.0.0.1:6002"}`,
 		broadcast: `{"path":"/ws"}`,
 	}))
 

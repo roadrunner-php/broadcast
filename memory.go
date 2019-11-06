@@ -115,7 +115,7 @@ func (m *Memory) Unsubscribe(upstream chan *Message, topics ...string) {
 	<-ctx.done
 }
 
-// Broadcast one or multiple messages.
+// Broadcast one or multiple Messages.
 func (m *Memory) Broadcast(messages ...*Message) error {
 	for _, msg := range messages {
 		m.messages <- msg

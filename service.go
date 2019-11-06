@@ -26,7 +26,7 @@ type Broker interface {
 	// Unsubscribe broker from one or multiple topics.
 	Unsubscribe(upstream chan *Message, topics ...string)
 
-	// Broadcast one or multiple messages.
+	// Broadcast one or multiple Messages.
 	Broadcast(messages ...*Message) error
 }
 
@@ -38,7 +38,7 @@ type Service struct {
 	// wsPool manage websockets
 	wsPool *wsPool
 
-	// broadcast messages
+	// broadcast Messages
 	mu     sync.Mutex
 	broker Broker
 
@@ -135,7 +135,7 @@ func (s *Service) Unsubscribe(upstream chan *Message, topics ...string) {
 	s.getBroker().Unsubscribe(upstream, topics...)
 }
 
-// Broadcast one or multiple messages.
+// Broadcast one or multiple Messages.
 func (s *Service) Broadcast(msg ...*Message) error {
 	broker := s.getBroker()
 	if broker == nil {

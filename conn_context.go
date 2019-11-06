@@ -4,7 +4,7 @@ import "github.com/gorilla/websocket"
 
 // ConnContext represents the connection and it's state.
 type ConnContext struct {
-	// Upstream to push messages into.
+	// Upstream to push Messages into.
 	Upstream chan *Message
 
 	// Conn to the client.
