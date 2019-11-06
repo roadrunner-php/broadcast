@@ -21,10 +21,10 @@ before_script:
   - ./rr-broadcast serve -c tests/.rr.yaml &
 
 script:
+  - vendor/bin/spiral-cs check src tests
   - go test -v -race -cover -coverprofile=broadcast.txt -covermode=atomic
   - go build -o tests/ws-client tests/ws-client.go
   - vendor/bin/phpunit --coverage-clover=coverage.xml
-  - vendor/bin/spiral-cs check src tests
 
 after_success:
   - bash <(curl -s https://codecov.io/bash) -f broadcast.txt

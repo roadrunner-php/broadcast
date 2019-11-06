@@ -3,3 +3,4 @@ go.sum
 vendor
 composer.lock
 .php_cs.cache
+tests/ws-client

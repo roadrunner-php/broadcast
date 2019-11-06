@@ -5,20 +5,23 @@ import (
 )
 
 const (
-	// EventConnect fired when new client is connected, the context is *websocket.Conn.
-	EventConnect = iota + 2500
+	// EventWebsocketConnect fired when new client is connected, the context is *websocket.Conn.
+	EventWebsocketConnect = iota + 2500
 
-	// EventDisconnect fired when websocket is disconnected, context is empty.
-	EventDisconnect
+	// EventWebsocketDisconnect fired when websocket is disconnected, context is empty.
+	EventWebsocketDisconnect
 
-	// EventJoin caused when topics are being consumed, context if *TopicEvent.
-	EventJoin
+	// EventWebsocketJoin caused when topics are being consumed, context if *TopicEvent.
+	EventWebsocketJoin
 
-	// EventLeave caused when topic consumption are stopped, context if *TopicEvent.
-	EventLeave
+	// EventWebsocketLeave caused when topic consumption are stopped, context if *TopicEvent.
+	EventWebsocketLeave
 
-	// EventError when any broadcast error occurred, the context is *ErrorEvent.
-	EventError
+	// EventWebsocketError when any broadcast error occurred, the context is *ErrorEvent.
+	EventWebsocketError
+
+	// EventBrokerError the context is error.
+	EventBrokerError
 )
 
 // ErrorEvent represents singular broadcast error event.

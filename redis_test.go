@@ -76,8 +76,8 @@ func TestRedis_Broadcast(t *testing.T) {
 		}
 	}()
 
-	assert.NoError(t, br.Broker().Broadcast(NewMessage("topic2", "hello1"))) // must not be delivered
-	assert.NoError(t, br.Broker().Broadcast(NewMessage("topic", "hello1")))  // must not be delivered
+	assert.NoError(t, br.getBroker().Broadcast(NewMessage("topic2", "hello1"))) // must not be delivered
+	assert.NoError(t, br.getBroker().Broadcast(NewMessage("topic", "hello1")))  // must not be delivered
 
 	assert.NoError(t, conn.WriteMessage(websocket.TextMessage, []byte(`{"cmd":"join", "args":["topic"]}`)))
 	assert.Equal(t, `{"topic":"@join","payload":["topic"]}`, readStr(<-read))
@@ -86,13 +86,13 @@ func TestRedis_Broadcast(t *testing.T) {
 	assert.NoError(t, conn.WriteMessage(websocket.TextMessage, []byte(`{"cmd":"join", "args":["topic"]}`)))
 	assert.Equal(t, `{"topic":"@join","payload":["topic"]}`, readStr(<-read))
 
-	assert.NoError(t, br.Broker().Broadcast(NewMessage("topic", "hello2")))
+	assert.NoError(t, br.getBroker().Broadcast(NewMessage("topic", "hello2")))
 	assert.Equal(t, `{"topic":"topic","payload":"hello2"}`, readStr(<-read))
 
 	assert.NoError(t, conn.WriteMessage(websocket.TextMessage, []byte(`{"cmd":"leave", "args":["topic"]}`)))
 	assert.Equal(t, `{"topic":"@leave","payload":["topic"]}`, readStr(<-read))
 
-	assert.NoError(t, br.Broker().Broadcast(NewMessage("topic", "hello2")))
+	assert.NoError(t, br.getBroker().Broadcast(NewMessage("topic", "hello2")))
 
 	assert.NoError(t, conn.WriteMessage(websocket.TextMessage, []byte(`{"cmd":"join", "args":["topic"]}`)))
 	assert.Equal(t, `{"topic":"@join","payload":["topic"]}`, readStr(<-read))
@@ -144,9 +144,9 @@ func TestRedis_Broadcast_Error(t *testing.T) {
 	assert.NoError(t, conn.WriteMessage(websocket.TextMessage, []byte(`{"cmd":"join", "args":["topic"]}`)))
 	assert.Equal(t, `{"topic":"@join","payload":["topic"]}`, readStr(<-read))
 
-	assert.NoError(t, br.Broker().Broadcast(&Message{Topic: "topic", Payload: []byte("broken")}))
+	assert.NoError(t, br.getBroker().Broadcast(&Message{Topic: "topic", Payload: []byte("broken")}))
 	assert.Equal(t, ``, readStr(<-read))
 
-	assert.NoError(t, br.Broker().Broadcast(NewMessage("topic", "hello2")))
+	assert.NoError(t, br.getBroker().Broadcast(NewMessage("topic", "hello2")))
 	assert.Equal(t, `{"topic":"topic","payload":"hello2"}`, readStr(<-read))
 }

@@ -1,7 +1,7 @@
 {
   "name": "spiral/broadcast",
   "type": "library",
-  "description": "Broadcast messages over web-sockets",
+  "description": "Event Broadcasting",
   "license": "MIT",
   "authors": [
     {

@@ -48,7 +48,7 @@ func newCollector() *metricCollector {
 // listener listens to http events and generates nice looking output.
 func (c *metricCollector) listener(event int, ctx interface{}) {
 	switch event {
-	case broadcast.EventConnect:
+	case broadcast.EventWebsocketConnect:
 		c.connCounter.Inc()
 	}
 }

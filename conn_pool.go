@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-// manages all ws connections and their upstream channels
+// manages all wsPool connections and their upstream channels
 type connPool struct {
 	mu   sync.Mutex
 	conn map[*websocket.Conn]chan *Message

@@ -6,7 +6,7 @@ type rpcService struct {
 
 // Broadcast messages.
 func (r *rpcService) Broadcast(msg []*Message, ok *bool) error {
-	if broker := r.s.Broker(); broker != nil {
+	if broker := r.s.getBroker(); broker != nil {
 		*ok = true
 		return broker.Broadcast(msg...)
 	}
@@ -16,7 +16,7 @@ func (r *rpcService) Broadcast(msg []*Message, ok *bool) error {
 
 // Broadcast messages in async mode.
 func (r *rpcService) BroadcastAsync(msg []*Message, ok *bool) error {
-	if broker := r.s.Broker(); broker != nil {
+	if broker := r.s.getBroker(); broker != nil {
 		*ok = true
 		go broker.Broadcast(msg...)
 	}

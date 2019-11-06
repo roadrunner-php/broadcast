@@ -1,26 +1,22 @@
 package broadcast
 
 import (
-	"errors"
 	"github.com/gorilla/websocket"
 	"github.com/spiral/roadrunner/service/env"
 	rhttp "github.com/spiral/roadrunner/service/http"
-	"github.com/spiral/roadrunner/service/http/attributes"
 	"github.com/spiral/roadrunner/service/rpc"
-	"net/http"
-	"strings"
 	"sync"
 )
 
 // ID defines public service name.
 const ID = "broadcast"
 
-// Broker defines the ability to operate as message passing broker.
+// getBroker defines the ability to operate as message passing broker.
 type Broker interface {
 	// Serve serves broker.
 	Serve() error
 
-	// Stop the consumption and disconnect broker.
+	// close the consumption and disconnect broker.
 	Stop()
 
 	// Subscribe broker to one or multiple topics.
@@ -33,16 +29,13 @@ type Broker interface {
 	Broadcast(messages ...*Message) error
 }
 
-// CommandHandler handles custom commands.
-type CommandHandler func(ctx *ConnContext, cmd []byte)
-
-// Service manages even broadcasting over websockets.
+// Service manages even broadcasting and websocket interface.
 type Service struct {
 	// service and broker configuration
 	cfg *Config
 
-	// manages ws upgrade protocol
-	upgrade websocket.Upgrader
+	// wsPool manage websockets
+	wsPool *wsPool
 
 	// broadcast messages
 	mu     sync.Mutex
@@ -50,12 +43,6 @@ type Service struct {
 
 	// event listeners
 	lsns []func(event int, ctx interface{})
-
-	// custom commands
-	commands map[string]CommandHandler
-
-	// manages all open connections and broadcasting
-	connPool *connPool
 }
 
 // AddListener attaches server event controller.
@@ -63,27 +50,33 @@ func (s *Service) AddListener(l func(event int, ctx interface{})) {
 	s.lsns = append(s.lsns, l)
 }
 
-// AddCommand attached custom client command handler.
+// AddCommand attached custom client command handler, for websocket only.
 func (s *Service) AddCommand(name string, cmd CommandHandler) {
-	s.commands[name] = cmd
+	if s.wsPool != nil {
+		s.wsPool.commands[name] = cmd
+	}
 }
 
 // Init service.
 func (s *Service) Init(cfg *Config, r *rpc.Service, h *rhttp.Service, e env.Environment) (bool, error) {
-	if cfg.Path == "" || h == nil {
-		return false, nil
-	}
-
 	s.cfg = cfg
-	s.upgrade = websocket.Upgrader{}
-	s.connPool = &connPool{conn: make(map[*websocket.Conn]chan *Message)}
-	s.commands = make(map[string]CommandHandler)
 
-	h.AddMiddleware(s.middleware)
+	if s.cfg.Path != "" && h != nil {
+		s.wsPool = &wsPool{
+			path:     s.cfg.Path,
+			broker:   s.getBroker,
+			listener: s.throw,
+			upgrade:  websocket.Upgrader{},
+			connPool: &connPool{conn: make(map[*websocket.Conn]chan *Message)},
+			commands: make(map[string]CommandHandler),
+		}
 
-	if e != nil {
-		// ensure that underlying kernel knows what route to handle
-		e.SetEnv("RR_BROADCAST_URL", cfg.Path)
+		h.AddMiddleware(s.wsPool.middleware)
+
+		if e != nil {
+			// ensure that underlying kernel knows what route to handle
+			e.SetEnv("RR_BROADCAST_URL", cfg.Path)
+		}
 	}
 
 	if r != nil {
@@ -97,11 +90,13 @@ func (s *Service) Init(cfg *Config, r *rpc.Service, h *rhttp.Service, e env.Envi
 
 // Serve broadcast broker.
 func (s *Service) Serve() (err error) {
-	defer s.connPool.close()
+	if s.wsPool != nil {
+		defer s.wsPool.close()
+	}
 
 	s.mu.Lock()
 	if s.cfg.Redis != nil {
-		s.broker, err = redisBroker(s.cfg.Redis, s.handleError)
+		s.broker, err = redisBroker(s.cfg.Redis, func(err error) { s.throw(EventBrokerError, err) })
 		if err != nil {
 			return err
 		}
@@ -113,132 +108,30 @@ func (s *Service) Serve() (err error) {
 	return s.broker.Serve()
 }
 
-// Stop broadcast broker.
+// close broadcast broker.
 func (s *Service) Stop() {
-	broker := s.Broker()
+	broker := s.getBroker()
 	if broker != nil {
 		broker.Stop()
 	}
 }
 
-// Broker returns associated broker.
-func (s *Service) Broker() Broker {
+// getBroker returns associated broker.
+func (s *Service) getBroker() Broker {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	return s.broker
 }
 
-// middleware intercepts websocket connections.
-func (s *Service) middleware(f http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != s.cfg.Path {
-			f(w, r)
-			return
-		}
-
-		broker := s.Broker()
-		if broker == nil {
-			f(w, r)
-			return
-		}
-
-		if err := s.assertServerAccess(f, r); err != nil {
-			err.copy(w)
-			return
-		}
-
-		conn, err := s.upgrade.Upgrade(w, r, nil)
-		if err != nil {
-			s.handleError(err, nil)
-			return
-		}
-
-		s.throw(EventConnect, conn)
-		upstream := s.connPool.connect(conn, s.handleError)
-
-		s.serveConn(conn, f, r, broker, upstream)
-	}
+// Subscribe broker to one or multiple topics.
+func (s *Service) Subscribe(upstream chan *Message, topics ...string) error {
+	return s.getBroker().Subscribe(upstream, topics...)
 }
 
-// send and receive messages over websocket
-func (s *Service) serveConn(
-	conn *websocket.Conn,
-	f http.HandlerFunc,
-	r *http.Request,
-	broker Broker,
-	upstream chan *Message,
-) {
-	connContext := &ConnContext{
-		Upstream: upstream,
-		Conn:     conn,
-		Topics:   make([]string, 0),
-	}
-
-	defer func() {
-		s.throw(EventDisconnect, conn)
-		broker.Unsubscribe(upstream, connContext.Topics...)
-		s.connPool.disconnect(conn)
-	}()
-
-	cmd := &Command{}
-	for {
-		if err := conn.ReadJSON(cmd); err != nil {
-			s.handleError(err, conn)
-			return
-		}
-
-		switch cmd.Cmd {
-		case "join":
-			topics := make([]string, 0)
-			if err := cmd.Unmarshal(&topics); err != nil {
-				s.handleError(err, conn)
-				return
-			}
-
-			if err := s.assertAccess(f, r, topics...); err != nil {
-				s.handleError(err, conn)
-				return
-			}
-
-			if len(topics) == 0 {
-				continue
-			}
-
-			if err := broker.Subscribe(upstream, topics...); err != nil {
-				s.handleError(err, conn)
-				return
-			}
-
-			connContext.addTopic(topics...)
-			upstream <- NewMessage("@join", topics)
-			s.throw(EventJoin, &TopicEvent{Conn: conn, Topics: topics})
-		case "leave":
-			topics := make([]string, 0)
-			if err := cmd.Unmarshal(&topics); err != nil {
-				s.handleError(err, conn)
-				return
-			}
-
-			if len(topics) == 0 {
-				continue
-			}
-
-			connContext.dropTopic(topics...)
-			broker.Unsubscribe(upstream, topics...)
-			upstream <- NewMessage("@leave", topics)
-			s.throw(EventLeave, &TopicEvent{Conn: conn, Topics: topics})
-		default:
-			if handler, ok := s.commands[cmd.Cmd]; ok {
-				handler(connContext, cmd.Args)
-			}
-		}
-	}
-}
-
-// handle connection error
-func (s *Service) handleError(err error, conn *websocket.Conn) {
-	s.throw(EventError, &ErrorEvent{Conn: conn, Caused: err})
+// Unsubscribe broker from one or multiple topics.
+func (s *Service) Unsubscribe(upstream chan *Message, topics ...string) {
+	s.getBroker().Unsubscribe(upstream, topics...)
 }
 
 // throw handles service, server and pool events.
@@ -246,36 +139,4 @@ func (s *Service) throw(event int, ctx interface{}) {
 	for _, l := range s.lsns {
 		l(event, ctx)
 	}
-}
-
-// assertServerAccess checks if user can join server and returns error and body if user can not. Must return nil in
-// case of error
-func (s *Service) assertServerAccess(f http.HandlerFunc, r *http.Request) *responseWrapper {
-	attributes.Set(r, "broadcast:joinServer", true)
-	defer delete(attributes.All(r), "broadcast:joinServer")
-
-	w := newResponseWrapper()
-	f(w, r)
-
-	if !w.IsOK() {
-		return w
-	}
-
-	return nil
-}
-
-// assertAccess checks if user can access given channel, the application will receive all user headers and cookies.
-// the decision to authorize user will be based on response code (200).
-func (s *Service) assertAccess(f http.HandlerFunc, r *http.Request, channels ...string) error {
-	attributes.Set(r, "broadcast:joinTopics", strings.Join(channels, ","))
-	defer delete(attributes.All(r), "broadcast:joinTopics")
-
-	w := newResponseWrapper()
-	f(w, r)
-
-	if !w.IsOK() {
-		return errors.New(string(w.Body()))
-	}
-
-	return nil
 }

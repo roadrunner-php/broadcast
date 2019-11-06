@@ -431,7 +431,7 @@ func Test_Service_Events(t *testing.T) {
 
 	done := make(chan interface{})
 	br.AddListener(func(event int, ctx interface{}) {
-		if event == EventConnect {
+		if event == EventWebsocketConnect {
 			close(done)
 		}
 	})
@@ -490,7 +490,7 @@ func Test_Service_Command(t *testing.T) {
 	br.AddCommand("send", func(ctx *ConnContext, cmd []byte) {
 		assert.Equal(t, []byte(`"send-message"`), cmd)
 		assert.Equal(t, []string{"topic"}, ctx.Topics)
-		assert.NoError(t, br.Broker().Broadcast(NewMessage("topic", "custom-message")))
+		assert.NoError(t, br.getBroker().Broadcast(NewMessage("topic", "custom-message")))
 	})
 
 	go func() { c.Serve() }()

@@ -7,8 +7,8 @@ import (
 
 // Config configures the broadcast extension.
 type Config struct {
-	// Path defines on this URL the middleware must be activated. Same path must
-	// be handled by underlying application kernel to authorize the consumption.
+	// Path defines on this URL the middleware must be activated. Same path must be handled by underlying
+	// application kernel to authorize the consumption. Optional.
 	Path string
 
 	// RedisConfig configures redis broker.

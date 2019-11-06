@@ -2,13 +2,12 @@ package broadcast
 
 import (
 	"github.com/go-redis/redis"
-	"github.com/gorilla/websocket"
 )
 
 // Redis based broadcast router.
 type Redis struct {
 	client        *redis.Client
-	errHandler    func(err error, conn *websocket.Conn)
+	errHandler    func(err error)
 	routes        map[string][]chan *Message
 	messages      chan *Message
 	listen, leave chan subscriber
@@ -16,7 +15,7 @@ type Redis struct {
 }
 
 // creates new redis broker
-func redisBroker(cfg *RedisConfig, errHandler func(err error, conn *websocket.Conn)) (*Redis, error) {
+func redisBroker(cfg *RedisConfig, errHandler func(err error)) (*Redis, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     cfg.Addr,
 		Password: cfg.Password,
@@ -93,7 +92,7 @@ func (r *Redis) handleLeave(sb subscriber, pubsub *redis.PubSub) {
 	}
 	if len(dropTopics) != 0 {
 		if err := pubsub.Unsubscribe(dropTopics...); err != nil {
-			r.errHandler(err, nil)
+			r.errHandler(err)
 		}
 	}
 }
@@ -120,12 +119,12 @@ func (r *Redis) handleJoin(sb subscriber, pubsub *redis.PubSub) {
 	}
 	if len(newTopics) != 0 {
 		if err := pubsub.Subscribe(newTopics...); err != nil {
-			r.errHandler(err, nil)
+			r.errHandler(err)
 		}
 	}
 }
 
-// Stop the consumption and disconnect broker.
+// close the consumption and disconnect broker.
 func (r *Redis) Stop() {
 	close(r.stop)
 }

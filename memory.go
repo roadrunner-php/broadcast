@@ -92,7 +92,7 @@ func (m *Memory) handleJoin(sb subscriber) {
 	}
 }
 
-// Stop the consumption and disconnect broker.
+// close the consumption and disconnect broker.
 func (m *Memory) Stop() {
 	close(m.stop)
 }

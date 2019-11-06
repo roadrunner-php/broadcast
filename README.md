@@ -1,4 +1,4 @@
-# RoadRunner: Broadcast messages over web-sockets
+# RoadRunner: Event Broadcasting
 [![Latest Stable Version](https://poser.pugx.org/spiral/broadcast/version)](https://packagist.org/packages/spiral/broadcast)
 [![GoDoc](https://godoc.org/github.com/spiral/broadcast?status.svg)](https://godoc.org/github.com/spiral/broadcast)
 [![Build Status](https://travis-ci.org/spiral/broadcast.svg?branch=master)](https://travis-ci.org/spiral/broadcast)
@@ -7,10 +7,15 @@
 
 Features:
 --------
-- Server and topic access verification via PHP
-- Redis and In-Memory brokers
+- Produce and consume events
+- Subscribe to topic from Golang or PHP
+- State Machine support, distributed lock support
+- Distributed async callbacks
 - Multi-Topic subscription
-- Custom Command handlers
+- WebSocket support
+    - Server and topic access verification via PHP
+- Redis and In-Memory brokers
+- Custom topic command handlers
 - Automatic reconnects
 - Prometheus metrics
 

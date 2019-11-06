@@ -28,21 +28,21 @@ type debugger struct{ logger *logrus.Logger }
 func (s *debugger) listener(event int, ctx interface{}) {
 
 	switch event {
-	case broadcast.EventConnect:
+	case broadcast.EventWebsocketConnect:
 		conn := ctx.(*websocket.Conn)
 		s.logger.Debug(util.Sprintf(
 			"[broadcast] <green+hb>%s</reset> connected",
 			conn.RemoteAddr(),
 		))
 
-	case broadcast.EventDisconnect:
+	case broadcast.EventWebsocketDisconnect:
 		conn := ctx.(*websocket.Conn)
 		s.logger.Debug(util.Sprintf(
 			"[broadcast] <yellow+hb>%s</reset> disconnected",
 			conn.RemoteAddr(),
 		))
 
-	case broadcast.EventJoin:
+	case broadcast.EventWebsocketJoin:
 		e := ctx.(*broadcast.TopicEvent)
 		s.logger.Debug(util.Sprintf(
 			"[broadcast] <white+hb>%s</reset> join <cyan+hb>[%s]</reset>",
@@ -50,7 +50,7 @@ func (s *debugger) listener(event int, ctx interface{}) {
 			strings.Join(e.Topics, ", "),
 		))
 
-	case broadcast.EventLeave:
+	case broadcast.EventWebsocketLeave:
 		e := ctx.(*broadcast.TopicEvent)
 		s.logger.Debug(util.Sprintf(
 			"[broadcast] <white+hb>%s</reset> leave <magenta+hb>[%s]</reset>",
@@ -58,7 +58,7 @@ func (s *debugger) listener(event int, ctx interface{}) {
 			strings.Join(e.Topics, ", "),
 		))
 
-	case broadcast.EventError:
+	case broadcast.EventWebsocketError:
 		e := ctx.(*broadcast.ErrorEvent)
 		if e.Conn != nil {
 			s.logger.Debug(util.Sprintf(
