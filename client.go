@@ -1,42 +1,80 @@
 package broadcast
 
-// Client subscribes to a given topic and consumes or publish messages to it. Client will be receiving messages it
+import "sync"
+
+// NewClient subscribes to a given topic and consumes or publish messages to it. NewClient will be receiving messages it
 // produced.
 type Client struct {
-	// Messages consumed from related topic. The messages MUST be consumed, otherwise system will be blocked.
-	Messages chan *Message
-
-	// internal binding
+	upstream  chan *Message
 	broadcast *Service
-	topic     string
+	mu        sync.Mutex
+	topics    []string
 }
 
-// NewClient creates new broadcast client.
-func NewClient(topic string, broadcast *Service) (*Client, error) {
-	c := &Client{
-		broadcast: broadcast,
-		topic:     topic,
-		Messages:  make(chan *Message),
+// NewClient client to specific topics.
+func (c *Client) Connect(topics ...string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	newTopics := make([]string, 0)
+	for _, topic := range topics {
+		found := false
+		for _, e := range c.topics {
+			if e == topic {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			newTopics = append(newTopics, topic)
+		}
 	}
 
-	if err := c.broadcast.Subscribe(c.Messages, c.topic); err != nil {
-		return nil, err
+	c.topics = append(c.topics, newTopics...)
+	if len(newTopics) == 0 {
+		return nil
 	}
 
-	return c, nil
+	return c.broadcast.Subscribe(c.upstream, newTopics...)
 }
 
-// Publish message into associated topic.
-func (c *Client) Publish(payload ...interface{}) error {
-	messages := make([]*Message, 0, len(payload))
-	for _, p := range payload {
-		messages = append(messages, NewMessage(c.topic, p))
+// Disconnect client from specific topics
+func (c *Client) Disconnect(topics ...string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	dropTopics := make([]string, 0)
+	for _, topic := range topics {
+		for i, e := range c.topics {
+			if e == topic {
+				c.topics[i] = c.topics[len(c.topics)-1]
+				c.topics = c.topics[:len(c.topics)-1]
+				dropTopics = append(dropTopics, topic)
+			}
+		}
 	}
 
-	return c.broadcast.Broadcast(messages...)
+	if len(dropTopics) == 0 {
+		return
+	}
+
+	c.broadcast.Unsubscribe(c.upstream, dropTopics...)
+}
+
+// Publish message into associated topic or topics.
+func (c *Client) Publish(msg ...*Message) error {
+	return c.broadcast.Broadcast(msg...)
 }
 
 // Close the client and consumption.
 func (c *Client) Close() {
-	c.broadcast.Unsubscribe(c.Messages, c.topic)
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if len(c.topics) != 0 {
+		c.broadcast.Unsubscribe(c.upstream, c.topics...)
+	}
+
+	close(c.upstream)
 }

@@ -12,24 +12,6 @@ import (
 // ID defines public service name.
 const ID = "broadcast"
 
-// getBroker defines the ability to operate as message passing broker.
-type Broker interface {
-	// Serve serves broker.
-	Serve() error
-
-	// close the consumption and disconnect broker.
-	Stop()
-
-	// Subscribe broker to one or multiple topics.
-	Subscribe(upstream chan *Message, topics ...string) error
-
-	// Unsubscribe broker from one or multiple topics.
-	Unsubscribe(upstream chan *Message, topics ...string)
-
-	// Broadcast one or multiple Messages.
-	Broadcast(messages ...*Message) error
-}
-
 // Service manages even broadcasting and websocket interface.
 type Service struct {
 	// service and broker configuration
@@ -65,7 +47,7 @@ func (s *Service) Init(cfg *Config, r *rpc.Service, h *rhttp.Service, e env.Envi
 	if s.cfg.Path != "" && h != nil {
 		s.wsPool = &wsPool{
 			path:     s.cfg.Path,
-			broker:   s.getBroker,
+			broker:   s.Broker,
 			listener: s.throw,
 			upgrade:  websocket.Upgrader{},
 			connPool: &connPool{conn: make(map[*websocket.Conn]chan *Message)},
@@ -111,33 +93,41 @@ func (s *Service) Serve() (err error) {
 
 // close broadcast broker.
 func (s *Service) Stop() {
-	broker := s.getBroker()
+	broker := s.Broker()
 	if broker != nil {
 		broker.Stop()
 	}
 }
 
-// getBroker returns associated broker.
-func (s *Service) getBroker() Broker {
+// Broker returns associated broker.
+func (s *Service) Broker() Broker {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	return s.broker
 }
 
+// NewClient returns single connected client with ability to consume or produce into topic.
+func (s *Service) NewClient(upstream chan *Message) *Client {
+	return &Client{
+		upstream:  upstream,
+		broadcast: s,
+	}
+}
+
 // Subscribe broker to one or multiple topics.
 func (s *Service) Subscribe(upstream chan *Message, topics ...string) error {
-	return s.getBroker().Subscribe(upstream, topics...)
+	return s.Broker().Subscribe(upstream, topics...)
 }
 
 // Unsubscribe broker from one or multiple topics.
 func (s *Service) Unsubscribe(upstream chan *Message, topics ...string) {
-	s.getBroker().Unsubscribe(upstream, topics...)
+	s.Broker().Unsubscribe(upstream, topics...)
 }
 
 // Broadcast one or multiple Messages.
 func (s *Service) Broadcast(msg ...*Message) error {
-	broker := s.getBroker()
+	broker := s.Broker()
 	if broker == nil {
 		return errors.New("no active broker")
 	}
