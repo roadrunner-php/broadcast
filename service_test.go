@@ -121,7 +121,7 @@ func Test_Service_EnvPath(t *testing.T) {
 
 	assert.NoError(t, c.Init(&testCfg{
 		http: `{
-			"address": ":6029",
+			"address": ":6039",
 			"workers":{"command": "php tests/worker-ok.php", "pool.numWorkers": 1}
 		}`,
 		rpc:       `{"Messages":"tcp://127.0.0.1:6002"}`,
@@ -132,7 +132,7 @@ func Test_Service_EnvPath(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 	defer c.Stop()
 
-	req, err := http.NewRequest("GET", "http://localhost:6029/", nil)
+	req, err := http.NewRequest("GET", "http://localhost:6039/", nil)
 	assert.NoError(t, err)
 
 	r, err := http.DefaultClient.Do(req)
