@@ -1,6 +1,7 @@
 package broadcast
 
 import (
+	"errors"
 	"github.com/gorilla/websocket"
 	"github.com/spiral/roadrunner/service/env"
 	rhttp "github.com/spiral/roadrunner/service/http"
@@ -132,6 +133,16 @@ func (s *Service) Subscribe(upstream chan *Message, topics ...string) error {
 // Unsubscribe broker from one or multiple topics.
 func (s *Service) Unsubscribe(upstream chan *Message, topics ...string) {
 	s.getBroker().Unsubscribe(upstream, topics...)
+}
+
+// Broadcast one or multiple messages.
+func (s *Service) Broadcast(msg ...*Message) error {
+	broker := s.getBroker()
+	if broker == nil {
+		return errors.New("no active broker")
+	}
+
+	return broker.Broadcast(msg...)
 }
 
 // throw handles service, server and pool events.
