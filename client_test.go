@@ -58,6 +58,8 @@ func Test_Client_Consume_And_Produce_On_Redis(t *testing.T) {
 	msg := make(chan *Message)
 
 	client := br.NewClient(msg)
+	defer client.Close()
+
 	assert.NoError(t, client.Subscribe("default"))
 
 	assert.NoError(t, client.Publish(NewMessage("default", "hello")))
@@ -86,6 +88,8 @@ func Test_Client_Topics(t *testing.T) {
 	msg := make(chan *Message)
 
 	client := br.NewClient(msg)
+	defer client.Close()
+
 	assert.NoError(t, client.Subscribe("default"))
 
 	assert.Equal(t, []string{"default"}, client.Topics())
