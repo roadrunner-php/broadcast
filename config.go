@@ -28,6 +28,11 @@ func (c *Config) Hydrate(cfg service.Config) error {
 	return nil
 }
 
+// InitDefaults enables in memory broadcast configuration.
+func (c *Config) InitDefaults() error {
+	return nil
+}
+
 // RedisConfig configures redis broker.
 type RedisConfig struct {
 	Addr     string
