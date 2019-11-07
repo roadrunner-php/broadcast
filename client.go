@@ -12,7 +12,7 @@ type Client struct {
 }
 
 // NewClient client to specific topics.
-func (c *Client) Connect(topics ...string) error {
+func (c *Client) Subscribe(topics ...string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -39,8 +39,8 @@ func (c *Client) Connect(topics ...string) error {
 	return c.broadcast.Subscribe(c.upstream, newTopics...)
 }
 
-// Disconnect client from specific topics
-func (c *Client) Disconnect(topics ...string) {
+// Unsubscribe client from specific topics
+func (c *Client) Unsubscribe(topics ...string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -65,6 +65,14 @@ func (c *Client) Disconnect(topics ...string) {
 // Publish message into associated topic or topics.
 func (c *Client) Publish(msg ...*Message) error {
 	return c.broadcast.Broadcast(msg...)
+}
+
+// Topics return all the topics client subscribed to.
+func (c *Client) Topics() []string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	return c.topics
 }
 
 // Close the client and consumption.
