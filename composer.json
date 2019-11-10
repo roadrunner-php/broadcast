@@ -15,7 +15,6 @@
     "spiral/roadrunner": "^1.1"
   },
   "require-dev": {
-    "spiral/dumper": "^1.0",
     "phpunit/phpunit": "~7.0",
     "spiral/code-style": "^1.0"
   },
