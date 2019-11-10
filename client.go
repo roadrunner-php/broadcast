@@ -43,11 +43,11 @@ func (c *Client) Subscribe(topics ...string) error {
 		}
 	}
 
-	c.topics = append(c.topics, newTopics...)
 	if len(newTopics) == 0 {
 		return nil
 	}
 
+	c.topics = append(c.topics, newTopics...)
 	return c.broker.Subscribe(c.upstream, newTopics...)
 }
 

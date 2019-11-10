@@ -65,7 +65,12 @@ func (s *Service) Broker() Broker {
 
 // NewClient returns single connected client with ability to consume or produce into associated topic(s).
 func (s *Service) NewClient() *Client {
-	return &Client{upstream: make(chan *Message), broker: s.Broker()}
+	return &Client{
+		upstream: make(chan *Message),
+		broker:   s.Broker(),
+		topics:   make([]string, 0),
+		patterns: make([]string, 0),
+	}
 }
 
 // Publish one or multiple Channel.

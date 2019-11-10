@@ -10,6 +10,7 @@ func TestMemory_Broadcast(t *testing.T) {
 	defer c.Stop()
 
 	client := br.NewClient()
+	defer client.Close()
 
 	assert.NoError(t, br.Broker().Publish(newMessage("topic", "hello1"))) // must not be delivered
 
@@ -36,6 +37,7 @@ func TestMemory_BroadcastPattern(t *testing.T) {
 	defer c.Stop()
 
 	client := br.NewClient()
+	defer client.Close()
 
 	assert.NoError(t, br.Broker().Publish(newMessage("topic", "hello1"))) // must not be delivered
 

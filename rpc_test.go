@@ -10,6 +10,8 @@ func TestRPC_Broadcast(t *testing.T) {
 	defer c.Stop()
 
 	client := br.NewClient()
+	defer client.Close()
+
 	rcpClient, err := rpc.Client()
 	assert.NoError(t, err)
 
@@ -58,4 +60,12 @@ func TestRPC_Broadcast(t *testing.T) {
 	))
 	assert.True(t, ok)
 	assert.Equal(t, `"hello4"`, readStr(<-client.Channel()))
+
+	assert.NoError(t, rcpClient.Call(
+		"broadcast.PublishAsync",
+		[]*Message{newMessage("topic", `"hello5"`)},
+		&ok,
+	))
+	assert.True(t, ok)
+	assert.Equal(t, `"hello5"`, readStr(<-client.Channel()))
 }
