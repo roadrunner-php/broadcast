@@ -19,7 +19,7 @@ install:
 before_script:
   - go build -o rr-broadcast cmd/rr-broadcast/main.go
   - go build -o tests/go-client tests/go-client.go
-  - ./tests/go-client -c tests/.rr.yaml &
+  - ./tests/go-client serve -c tests/.rr.yaml &
 
 script:
   - vendor/bin/spiral-cs check src tests
