@@ -20,7 +20,7 @@ type Service struct {
 }
 
 // Init service.
-func (s *Service) Init(cfg *Config, rpc *rpc.Service) (bool, error) {
+func (s *Service) Init(cfg *Config, rpc *rpc.Service) (ok bool, err error) {
 	s.cfg = cfg
 
 	if rpc != nil {
@@ -29,21 +29,21 @@ func (s *Service) Init(cfg *Config, rpc *rpc.Service) (bool, error) {
 		}
 	}
 
-	return true, nil
-}
-
-// Serve broadcast broker.
-func (s *Service) Serve() (err error) {
 	s.mu.Lock()
 	if s.cfg.Redis != nil {
 		if s.broker, err = redisBroker(s.cfg.Redis); err != nil {
-			return err
+			return false, err
 		}
 	} else {
 		s.broker = memoryBroker()
 	}
 	s.mu.Unlock()
 
+	return true, nil
+}
+
+// Serve broadcast broker.
+func (s *Service) Serve() (err error) {
 	return s.broker.Serve()
 }
 

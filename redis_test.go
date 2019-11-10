@@ -25,11 +25,7 @@ func TestRedis_Error(t *testing.T) {
 
 	rpcPort++
 
-	if err != nil {
-		panic(err)
-	}
-
-	assert.Error(t, c.Serve())
+	assert.Error(t, err)
 }
 
 func TestRedis_Broadcast(t *testing.T) {

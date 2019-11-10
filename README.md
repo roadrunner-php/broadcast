@@ -7,10 +7,10 @@
 
 Features:
 --------
-- Produce and consume events
 - Golang Client and PHP producer
-- Multi and Glob based topic subscription
-- Redis and In-Memory brokers
+- Multi-topic subscriptions
+- In-memory routing and wildcard subscriptions
+- Redis and in-memory brokers
 - Automatic reconnects
 
 License:
