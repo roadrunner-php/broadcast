@@ -38,7 +38,7 @@ func (m *Memory) Serve() error {
 func (m *Memory) handleJoin(sub subscriber) (err error) {
 	if sub.pattern != "" {
 		_, err = m.router.SubscribePattern(sub.upstream, sub.pattern)
-		return nil
+		return err
 	}
 
 	m.router.Subscribe(sub.upstream, sub.topics...)
@@ -68,6 +68,7 @@ func (m *Memory) Subscribe(upstream chan *Message, topics ...string) error {
 	return <-ctx.done
 }
 
+// SubscribePattern broker to pattern.
 func (m *Memory) SubscribePattern(upstream chan *Message, pattern string) error {
 	ctx := subscriber{upstream: upstream, pattern: pattern, done: make(chan error)}
 
@@ -83,6 +84,7 @@ func (m *Memory) Unsubscribe(upstream chan *Message, topics ...string) error {
 	return <-ctx.done
 }
 
+// UnsubscribePattern broker from pattern.
 func (m *Memory) UnsubscribePattern(upstream chan *Message, pattern string) error {
 	ctx := subscriber{upstream: upstream, pattern: pattern, done: make(chan error)}
 

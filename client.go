@@ -4,7 +4,7 @@ import (
 	"sync"
 )
 
-// NewClient subscribes to a given topic and consumes or publish messages to it.
+// Client subscribes to a given topic and consumes or publish messages to it.
 type Client struct {
 	upstream chan *Message
 	broker   Broker

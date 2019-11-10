@@ -13,13 +13,13 @@ type Broker interface {
 	// Subscribe broker to one or multiple topics.
 	Subscribe(upstream chan *Message, topics ...string) error
 
-	// Subscribe broker to one or multiple topics.
+	// SubscribePattern broker to pattern.
 	SubscribePattern(upstream chan *Message, pattern string) error
 
 	// Unsubscribe broker from one or multiple topics.
 	Unsubscribe(upstream chan *Message, topics ...string) error
 
-	// Unsubscribe broker from one or multiple topics.
+	// UnsubscribePattern broker from pattern.
 	UnsubscribePattern(upstream chan *Message, pattern string) error
 
 	// Publish one or multiple Channel.

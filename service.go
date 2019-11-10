@@ -47,7 +47,7 @@ func (s *Service) Serve() (err error) {
 	return s.broker.Serve()
 }
 
-// close broadcast broker.
+// Stop closes broadcast broker.
 func (s *Service) Stop() {
 	broker := s.Broker()
 	if broker != nil {

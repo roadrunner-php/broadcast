@@ -99,7 +99,7 @@ func (r *Redis) Subscribe(upstream chan *Message, topics ...string) error {
 	return <-ctx.done
 }
 
-// Subscribe broker to one or multiple topics.
+// SubscribePattern broker to pattern.
 func (r *Redis) SubscribePattern(upstream chan *Message, pattern string) error {
 	ctx := subscriber{upstream: upstream, pattern: pattern, done: make(chan error)}
 
@@ -115,7 +115,7 @@ func (r *Redis) Unsubscribe(upstream chan *Message, topics ...string) error {
 	return <-ctx.done
 }
 
-// Unsubscribe broker from one or multiple topics.
+// UnsubscribePattern broker from pattern.
 func (r *Redis) UnsubscribePattern(upstream chan *Message, pattern string) error {
 	ctx := subscriber{upstream: upstream, pattern: pattern, done: make(chan error)}
 
