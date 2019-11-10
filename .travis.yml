@@ -27,8 +27,10 @@ script:
   - vendor/bin/phpunit --coverage-clover=coverage.xml
 
 after_success:
-  - bash <(curl -s https://codecov.io/bash) -f broadcast.txt
-  - bash <(curl -s https://codecov.io/bash) -f coverage.xml
+  - curl https://codecov.io/bash -o codecov-bash
+  - chmod +x codecov-bash
+  - ./codecov-bash -f broadcast.txt
+  - ./codecov-bash -f coverage.xml
 
 jobs:
   include:
