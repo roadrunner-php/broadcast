@@ -1,8 +1,6 @@
 package broadcast
 
-import (
-	"sync"
-)
+import "sync"
 
 // Client subscribes to a given topic and consumes or publish messages to it.
 type Client struct {
@@ -48,6 +46,7 @@ func (c *Client) Subscribe(topics ...string) error {
 	}
 
 	c.topics = append(c.topics, newTopics...)
+
 	return c.broker.Subscribe(c.upstream, newTopics...)
 }
 

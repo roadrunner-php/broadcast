@@ -1,8 +1,6 @@
 package broadcast
 
-import (
-	"github.com/gobwas/glob"
-)
+import "github.com/gobwas/glob"
 
 // Router performs internal message routing to multiple subscribers.
 type Router struct {
@@ -55,7 +53,9 @@ func (r *Router) Subscribe(upstream chan *Message, topics ...string) (newTopics 
 	for _, topic := range topics {
 		if _, ok := r.routes[topic]; !ok {
 			r.routes[topic] = []chan *Message{upstream}
-			newTopics = append(newTopics, topic)
+			if !r.collapsed(topic) {
+				newTopics = append(newTopics, topic)
+			}
 			continue
 		}
 
@@ -94,9 +94,12 @@ func (r *Router) Unsubscribe(upstream chan *Message, topics ...string) (dropTopi
 		}
 
 		if len(r.routes[topic]) == 0 {
-			// topic has no subscribers
-			dropTopics = append(dropTopics, topic)
 			delete(r.routes, topic)
+
+			// standalone empty subscription
+			if !r.collapsed(topic) {
+				dropTopics = append(dropTopics, topic)
+			}
 		}
 	}
 
@@ -134,6 +137,8 @@ func (r *Router) SubscribePattern(upstream chan *Message, pattern string) (newPa
 
 // UnsubscribePattern unsubscribe from the pattern and returns an array of patterns which are no longer claimed.
 func (r *Router) UnsubscribePattern(upstream chan *Message, pattern string) (dropPatterns []string) {
+	// todo: store and return collapsed topics
+
 	w, ok := r.wildcard[pattern]
 	if !ok {
 		// no such pattern
@@ -154,4 +159,14 @@ func (r *Router) UnsubscribePattern(upstream chan *Message, pattern string) (dro
 	}
 
 	return nil
+}
+
+func (r *Router) collapsed(topic string) bool {
+	for _, w := range r.wildcard {
+		if w.glob.Match(topic) {
+			return true
+		}
+	}
+
+	return false
 }

@@ -5,6 +5,7 @@ import "github.com/go-redis/redis"
 // Redis based broadcast Router.
 type Redis struct {
 	client        redis.UniversalClient
+	psClient      redis.UniversalClient
 	router        *Router
 	messages      chan *Message
 	listen, leave chan subscriber
@@ -18,8 +19,14 @@ func redisBroker(cfg *RedisConfig) (*Redis, error) {
 		return nil, err
 	}
 
+	psClient := cfg.redisClient()
+	if _, err := psClient.Ping().Result(); err != nil {
+		return nil, err
+	}
+
 	return &Redis{
 		client:   client,
+		psClient: psClient,
 		router:   NewRouter(),
 		messages: make(chan *Message),
 		listen:   make(chan subscriber),
@@ -30,7 +37,7 @@ func redisBroker(cfg *RedisConfig) (*Redis, error) {
 
 // Serve serves broker.
 func (r *Redis) Serve() error {
-	pubsub := r.client.Subscribe()
+	pubsub := r.psClient.Subscribe()
 	channel := pubsub.Channel()
 
 	for {
