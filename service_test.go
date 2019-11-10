@@ -22,7 +22,7 @@ func setup(cfg string) (*Service, *rpc.Service, service.Container) {
 
 	err := c.Init(&testCfg{
 		broadcast: cfg,
-		rpc:       fmt.Sprintf(`{"join":"tcp://:%v"}`, rpcPort),
+		rpc:       fmt.Sprintf(`{"listen":"tcp://:%v"}`, rpcPort),
 	})
 
 	rpcPort++
