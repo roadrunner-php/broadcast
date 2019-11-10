@@ -8,14 +8,10 @@
 Features:
 --------
 - Produce and consume events
-- Subscribe to topic from Golang or PHP
-- Multi-Topic subscription
-- WebSocket support
-    - Server and topic access verification via PHP
+- Golang Client and PHP producer
+- Multi and Glob based topic subscription
 - Redis and In-Memory brokers
-- Custom topic command handlers
 - Automatic reconnects
-- Prometheus metrics
 
 License:
 --------

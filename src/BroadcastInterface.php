@@ -19,11 +19,11 @@ use Spiral\Broadcast\Exception\BroadcastException;
 interface BroadcastInterface
 {
     /**
-     * Broadcast one or multiple messages.
+     * Publish one or multiple messages.
      *
      * @param Message ...$message
      *
      * @throws BroadcastException
      */
-    public function broadcast(Message ...$message): void;
+    public function publish(Message ...$message): void;
 }

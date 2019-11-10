@@ -2,15 +2,12 @@ package broadcast
 
 import (
 	"errors"
+	"github.com/go-redis/redis"
 	"github.com/spiral/roadrunner/service"
 )
 
 // Config configures the broadcast extension.
 type Config struct {
-	// Path defines on this URL the middleware must be activated. Same path must be handled by underlying
-	// application kernel to authorize the consumption. Optional.
-	Path string
-
 	// RedisConfig configures redis broker.
 	Redis *RedisConfig
 }
@@ -35,14 +32,29 @@ func (c *Config) InitDefaults() error {
 
 // RedisConfig configures redis broker.
 type RedisConfig struct {
-	Addr     string
+	// Addr of the redis server.
+	Addr string
+
+	// Password to redis server.
 	Password string
-	DB       int
+
+	// DB index.
+	DB int
 }
 
-func (r *RedisConfig) isValid() error {
-	if r.Addr == "" {
-		return errors.New("redis addr must be specified")
+// clusterOptions
+func (cfg *RedisConfig) redisClient() redis.UniversalClient {
+	return redis.NewClient(&redis.Options{
+		Addr:     cfg.Addr,
+		Password: cfg.Password,
+		PoolSize: 2,
+	})
+}
+
+// check if redis config is valid.
+func (cfg *RedisConfig) isValid() error {
+	if cfg.Addr == "" {
+		return errors.New("redis addr is required")
 	}
 
 	return nil

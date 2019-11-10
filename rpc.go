@@ -4,16 +4,15 @@ type rpcService struct {
 	s *Service
 }
 
-// Broadcast Messages.
-func (r *rpcService) Broadcast(msg []*Message, ok *bool) error {
+// Publish Messages.
+func (r *rpcService) Publish(msg []*Message, ok *bool) error {
 	*ok = true
-	return r.s.Broadcast(msg...)
+	return r.s.Publish(msg...)
 }
 
-// Broadcast Messages in async mode.
-func (r *rpcService) BroadcastAsync(msg []*Message, ok *bool) error {
+// Publish Messages in async mode.
+func (r *rpcService) PublishAsync(msg []*Message, ok *bool) error {
 	*ok = true
-	go r.s.Broadcast(msg...)
-
+	go r.s.Publish(msg...)
 	return nil
 }

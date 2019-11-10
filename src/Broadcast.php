@@ -35,11 +35,11 @@ final class Broadcast implements BroadcastInterface
     /**
      * @inheritDoc
      */
-    public function broadcast(Message ...$message): void
+    public function publish(Message ...$message): void
     {
         try {
             $this->rpc->call(
-                sprintf('%s.BroadcastAsync', self::SERVICE),
+                sprintf('%s.PublishAsync', self::SERVICE),
                 $message
             );
         } catch (ServiceException | RelayException $e) {

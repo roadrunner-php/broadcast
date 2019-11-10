@@ -1,14 +1,26 @@
 package broadcast
 
-import "sync"
+import (
+	"sync"
+)
 
-// NewClient subscribes to a given topic and consumes or publish messages to it. NewClient will be receiving messages it
-// produced.
+// NewClient subscribes to a given topic and consumes or publish messages to it.
 type Client struct {
-	upstream  chan *Message
-	broadcast *Service
-	mu        sync.Mutex
-	topics    []string
+	upstream chan *Message
+	broker   Broker
+	mu       sync.Mutex
+	topics   []string
+	patterns []string
+}
+
+// Channel returns incoming messages channel.
+func (c *Client) Channel() chan *Message {
+	return c.upstream
+}
+
+// Publish message into associated topic or topics.
+func (c *Client) Publish(msg ...*Message) error {
+	return c.broker.Publish(msg...)
 }
 
 // NewClient client to specific topics.
@@ -36,11 +48,26 @@ func (c *Client) Subscribe(topics ...string) error {
 		return nil
 	}
 
-	return c.broadcast.Subscribe(c.upstream, newTopics...)
+	return c.broker.Subscribe(c.upstream, newTopics...)
+}
+
+// SubscribePattern subscribe client to the specific topic pattern.
+func (c *Client) SubscribePattern(pattern string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for _, g := range c.patterns {
+		if g == pattern {
+			return nil
+		}
+	}
+
+	c.patterns = append(c.patterns, pattern)
+	return c.broker.SubscribePattern(c.upstream, pattern)
 }
 
 // Unsubscribe client from specific topics
-func (c *Client) Unsubscribe(topics ...string) {
+func (c *Client) Unsubscribe(topics ...string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -56,15 +83,27 @@ func (c *Client) Unsubscribe(topics ...string) {
 	}
 
 	if len(dropTopics) == 0 {
-		return
+		return nil
 	}
 
-	c.broadcast.Unsubscribe(c.upstream, dropTopics...)
+	return c.broker.Unsubscribe(c.upstream, dropTopics...)
 }
 
-// Publish message into associated topic or topics.
-func (c *Client) Publish(msg ...*Message) error {
-	return c.broadcast.Broadcast(msg...)
+// UnsubscribePattern client from topic pattern.
+func (c *Client) UnsubscribePattern(pattern string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for i, g := range c.patterns {
+		if g == pattern {
+			c.patterns[i] = c.patterns[len(c.patterns)-1]
+			c.patterns = c.patterns[:len(c.patterns)-1]
+
+			return c.broker.UnsubscribePattern(c.upstream, pattern)
+		}
+	}
+
+	return nil
 }
 
 // Topics return all the topics client subscribed to.
@@ -75,14 +114,23 @@ func (c *Client) Topics() []string {
 	return c.topics
 }
 
+// Topics return all the topics client subscribed to.
+func (c *Client) Patterns() []string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	return c.patterns
+}
+
 // Close the client and consumption.
-func (c *Client) Close() {
+func (c *Client) Close() (err error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	if len(c.topics) != 0 {
-		c.broadcast.Unsubscribe(c.upstream, c.topics...)
+		err = c.broker.Unsubscribe(c.upstream, c.topics...)
 	}
 
 	close(c.upstream)
+	return err
 }

@@ -1,41 +1,30 @@
 package broadcast
 
-import (
-	"github.com/go-redis/redis"
-)
+import "github.com/go-redis/redis"
 
-// Redis based broadcast router.
+// Redis based broadcast Router.
 type Redis struct {
-	client        *redis.Client
-	errHandler    func(err error)
-	routes        map[string][]chan *Message
+	client        redis.UniversalClient
+	router        *Router
 	messages      chan *Message
 	listen, leave chan subscriber
 	stop          chan interface{}
 }
 
 // creates new redis broker
-func redisBroker(cfg *RedisConfig, errHandler func(err error)) (*Redis, error) {
-	client := redis.NewClient(&redis.Options{
-		Addr:     cfg.Addr,
-		Password: cfg.Password,
-		DB:       cfg.DB,
-	})
-
-	// todo: support redis cluster
-
+func redisBroker(cfg *RedisConfig) (*Redis, error) {
+	client := cfg.redisClient()
 	if _, err := client.Ping().Result(); err != nil {
 		return nil, err
 	}
 
 	return &Redis{
-		client:     client,
-		errHandler: errHandler,
-		routes:     make(map[string][]chan *Message),
-		messages:   make(chan *Message),
-		listen:     make(chan subscriber),
-		leave:      make(chan subscriber),
-		stop:       make(chan interface{}),
+		client:   client,
+		router:   NewRouter(),
+		messages: make(chan *Message),
+		listen:   make(chan subscriber),
+		leave:    make(chan subscriber),
+		stop:     make(chan interface{}),
 	}, nil
 }
 
@@ -47,81 +36,54 @@ func (r *Redis) Serve() error {
 	for {
 		select {
 		case ctx := <-r.listen:
-			r.handleJoin(ctx, pubsub)
-			close(ctx.done)
+			ctx.done <- r.handleJoin(ctx, pubsub)
 		case ctx := <-r.leave:
-			r.handleLeave(ctx, pubsub)
-			close(ctx.done)
+			ctx.done <- r.handleLeave(ctx, pubsub)
 		case msg := <-channel:
-			if _, ok := r.routes[msg.Channel]; !ok {
-				continue
-			}
-
-			for _, upstream := range r.routes[msg.Channel] {
-				// we except that the payload is always valid json
-				upstream <- &Message{Topic: msg.Channel, Payload: []byte(msg.Payload)}
-			}
-
+			r.router.Dispatch(&Message{
+				Topic:   msg.Channel,
+				Payload: []byte(msg.Payload),
+			})
 		case <-r.stop:
 			return nil
 		}
 	}
 }
 
-func (r *Redis) handleLeave(sb subscriber, pubsub *redis.PubSub) {
-	dropTopics := make([]string, 0)
-	for _, topic := range sb.topics {
-		if _, ok := r.routes[topic]; !ok {
-			continue
+func (r *Redis) handleJoin(sub subscriber, pubsub *redis.PubSub) error {
+	if sub.pattern != "" {
+		newPatterns, err := r.router.SubscribePattern(sub.upstream, sub.pattern)
+		if err != nil || len(newPatterns) == 0 {
+			return err
 		}
 
-		for i, up := range r.routes[topic] {
-			if up == sb.upstream {
-				r.routes[topic][i] = r.routes[topic][len(r.routes[topic])-1]
-				r.routes[topic][len(r.routes[topic])-1] = nil
-				r.routes[topic] = r.routes[topic][:len(r.routes[topic])-1]
-				break
-			}
-		}
+		return pubsub.PSubscribe(newPatterns...)
+	}
 
-		if len(r.routes[topic]) == 0 {
-			// topic has no subscribers
-			delete(r.routes, topic)
-			dropTopics = append(dropTopics, topic)
-		}
+	newTopics := r.router.Subscribe(sub.upstream, sub.topics...)
+	if len(newTopics) == 0 {
+		return nil
 	}
-	if len(dropTopics) != 0 {
-		if err := pubsub.Unsubscribe(dropTopics...); err != nil {
-			r.errHandler(err)
-		}
-	}
+
+	return pubsub.Subscribe(newTopics...)
 }
 
-func (r *Redis) handleJoin(sb subscriber, pubsub *redis.PubSub) {
-	newTopics := make([]string, 0)
-	for _, topic := range sb.topics {
-		if _, ok := r.routes[topic]; !ok {
-			r.routes[topic] = make([]chan *Message, 0)
-			newTopics = append(newTopics, topic)
+func (r *Redis) handleLeave(sub subscriber, pubsub *redis.PubSub) error {
+	if sub.pattern != "" {
+		dropPatterns := r.router.UnsubscribePattern(sub.upstream, sub.pattern)
+		if len(dropPatterns) == 0 {
+			return nil
 		}
 
-		joined := false
-		for _, up := range r.routes[topic] {
-			if up == sb.upstream {
-				joined = true
-				break
-			}
-		}
+		return pubsub.PUnsubscribe(dropPatterns...)
+	}
 
-		if !joined {
-			r.routes[topic] = append(r.routes[topic], sb.upstream)
-		}
+	dropTopics := r.router.Unsubscribe(sub.upstream, sub.topics...)
+	if len(dropTopics) == 0 {
+		return nil
 	}
-	if len(newTopics) != 0 {
-		if err := pubsub.Subscribe(newTopics...); err != nil {
-			r.errHandler(err)
-		}
-	}
+
+	return pubsub.Unsubscribe(dropTopics...)
 }
 
 // close the consumption and disconnect broker.
@@ -131,24 +93,36 @@ func (r *Redis) Stop() {
 
 // Subscribe broker to one or multiple channels.
 func (r *Redis) Subscribe(upstream chan *Message, topics ...string) error {
-	ctx := subscriber{upstream: upstream, topics: topics, done: make(chan interface{})}
+	ctx := subscriber{upstream: upstream, topics: topics, done: make(chan error)}
 
 	r.listen <- ctx
-	<-ctx.done
+	return <-ctx.done
+}
 
-	return nil
+func (r *Redis) SubscribePattern(upstream chan *Message, pattern string) error {
+	ctx := subscriber{upstream: upstream, pattern: pattern, done: make(chan error)}
+
+	r.listen <- ctx
+	return <-ctx.done
 }
 
 // Unsubscribe broker from one or multiple channels.
-func (r *Redis) Unsubscribe(upstream chan *Message, topics ...string) {
-	ctx := subscriber{upstream: upstream, topics: topics, done: make(chan interface{})}
+func (r *Redis) Unsubscribe(upstream chan *Message, topics ...string) error {
+	ctx := subscriber{upstream: upstream, topics: topics, done: make(chan error)}
 
 	r.leave <- ctx
-	<-ctx.done
+	return <-ctx.done
 }
 
-// Broadcast one or multiple Messages.
-func (r *Redis) Broadcast(messages ...*Message) error {
+func (r *Redis) UnsubscribePattern(upstream chan *Message, pattern string) error {
+	ctx := subscriber{upstream: upstream, pattern: pattern, done: make(chan error)}
+
+	r.leave <- ctx
+	return <-ctx.done
+}
+
+// Publish one or multiple Channel.
+func (r *Redis) Publish(messages ...*Message) error {
 	for _, msg := range messages {
 		if err := r.client.Publish(msg.Topic, []byte(msg.Payload)).Err(); err != nil {
 			return err

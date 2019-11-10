@@ -17,50 +17,30 @@ use Spiral\Broadcast\Exception\BroadcastException;
 use Spiral\Broadcast\Message;
 use Spiral\Goridge\RPC;
 use Spiral\Goridge\SocketRelay;
-use Symfony\Component\Process\Process;
 
 class BroadcastTest extends TestCase
 {
-    public function tearDown(): void
-    {
-        if (file_exists(__DIR__ . '/../log.txt')) {
-            unlink(__DIR__ . '/../log.txt');
-        }
-    }
-
     public function testBroadcast(): void
     {
         $rpc = new RPC(new SocketRelay('localhost', 6001));
         $br = new Broadcast($rpc);
 
-        $p = new Process(dirname(__DIR__) . '/ws-client', dirname(__DIR__));
-        $p->start();
-
-        while (!file_exists(__DIR__ . '/../log.txt')) {
-            usleep(1000);
-            if ($p->getErrorOutput() !== '') {
-                $this->fail($p->getErrorOutput());
-            }
-        }
-
-        while (trim(file_get_contents(__DIR__ . '/../log.txt')) !== '{"topic":"@join","payload":["topic"]}') {
-            usleep(1000);
-        }
-
-        $br->broadcast(
-            new Message('topic', 'hello'),
-            new Message('topic', ['key' => 'value'])
+        $br->publish(
+            new Message('tests/topic', 'hello'),
+            new Message('tests/123', ['key' => 'value'])
         );
 
-        while ($p->isRunning()) {
+        while (filesize(__DIR__ . '/../log.txt') < 40) {
+            clearstatcache(true, __DIR__ . '/../log.txt');
             usleep(1000);
         }
 
-        $this->assertSame('{"topic":"@join","payload":["topic"]}
-{"topic":"topic","payload":"hello"}
-{"topic":"topic","payload":{"key":"value"}}
-{"topic":"@leave","payload":["topic"]}
-', file_get_contents(__DIR__ . '/../log.txt'));
+        clearstatcache(true, __DIR__ . '/../log.txt');
+        $content = file_get_contents(__DIR__ . '/../log.txt');
+
+        $this->assertSame('tests/topic: "hello"
+tests/123: {"key":"value"}
+', $content);
     }
 
     public function testBroadcastException(): void
@@ -69,7 +49,7 @@ class BroadcastTest extends TestCase
         $br = new Broadcast($rpc);
 
         $this->expectException(BroadcastException::class);
-        $br->broadcast(
+        $br->publish(
             new Message('topic', 'hello')
         );
     }

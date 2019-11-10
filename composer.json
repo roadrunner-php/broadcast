@@ -15,10 +15,8 @@
     "spiral/roadrunner": "^1.1"
   },
   "require-dev": {
-    "spiral/core": "^1.0",
-    "spiral/debug": "^1.0",
+    "spiral/dumper": "^1.0",
     "phpunit/phpunit": "~7.0",
-    "symfony/process": "^4.3",
     "spiral/code-style": "^1.0"
   },
   "autoload": {

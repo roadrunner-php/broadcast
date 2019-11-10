@@ -1,25 +1,19 @@
 package broadcast
 
-type subscriber struct {
-	upstream chan *Message
-	done     chan interface{}
-	topics   []string
-}
-
 // Memory manages broadcasting in memory.
 type Memory struct {
-	routes        map[string][]chan *Message
-	messages      chan *Message
-	listen, leave chan subscriber
-	stop          chan interface{}
+	router      *Router
+	messages    chan *Message
+	join, leave chan subscriber
+	stop        chan interface{}
 }
 
 // memoryBroker creates new memory based message broker.
 func memoryBroker() *Memory {
 	return &Memory{
-		routes:   make(map[string][]chan *Message),
+		router:   NewRouter(),
 		messages: make(chan *Message),
-		listen:   make(chan subscriber),
+		join:     make(chan subscriber),
 		leave:    make(chan subscriber),
 		stop:     make(chan interface{}),
 	}
@@ -29,67 +23,36 @@ func memoryBroker() *Memory {
 func (m *Memory) Serve() error {
 	for {
 		select {
-		case ctx := <-m.listen:
-			m.handleJoin(ctx)
-			close(ctx.done)
+		case ctx := <-m.join:
+			ctx.done <- m.handleJoin(ctx)
 		case ctx := <-m.leave:
-			m.handleLeave(ctx)
-			close(ctx.done)
+			ctx.done <- m.handleLeave(ctx)
 		case msg := <-m.messages:
-			if _, ok := m.routes[msg.Topic]; !ok {
-				continue
-			}
-
-			for _, upstream := range m.routes[msg.Topic] {
-				upstream <- msg
-			}
-
+			m.router.Dispatch(msg)
 		case <-m.stop:
 			return nil
 		}
 	}
 }
 
-func (m *Memory) handleLeave(sb subscriber) {
-	for _, topic := range sb.topics {
-		if _, ok := m.routes[topic]; !ok {
-			continue
-		}
-
-		for i, up := range m.routes[topic] {
-			if up == sb.upstream {
-				m.routes[topic][i] = m.routes[topic][len(m.routes[topic])-1]
-				m.routes[topic][len(m.routes[topic])-1] = nil
-				m.routes[topic] = m.routes[topic][:len(m.routes[topic])-1]
-				break
-			}
-		}
-
-		if len(m.routes[topic]) == 0 {
-			// topic has no subscribers
-			delete(m.routes, topic)
-		}
+func (m *Memory) handleJoin(sub subscriber) (err error) {
+	if sub.pattern != "" {
+		_, err = m.router.SubscribePattern(sub.upstream, sub.pattern)
+		return nil
 	}
+
+	m.router.Subscribe(sub.upstream, sub.topics...)
+	return nil
 }
 
-func (m *Memory) handleJoin(sb subscriber) {
-	for _, topic := range sb.topics {
-		if _, ok := m.routes[topic]; !ok {
-			m.routes[topic] = make([]chan *Message, 0)
-		}
-
-		joined := false
-		for _, up := range m.routes[topic] {
-			if up == sb.upstream {
-				joined = true
-				break
-			}
-		}
-
-		if !joined {
-			m.routes[topic] = append(m.routes[topic], sb.upstream)
-		}
+func (m *Memory) handleLeave(sub subscriber) error {
+	if sub.pattern != "" {
+		m.router.UnsubscribePattern(sub.upstream, sub.pattern)
+		return nil
 	}
+
+	m.router.Unsubscribe(sub.upstream, sub.topics...)
+	return nil
 }
 
 // close the consumption and disconnect broker.
@@ -99,24 +62,36 @@ func (m *Memory) Stop() {
 
 // Subscribe broker to one or multiple channels.
 func (m *Memory) Subscribe(upstream chan *Message, topics ...string) error {
-	ctx := subscriber{upstream: upstream, topics: topics, done: make(chan interface{})}
+	ctx := subscriber{upstream: upstream, topics: topics, done: make(chan error)}
 
-	m.listen <- ctx
-	<-ctx.done
+	m.join <- ctx
+	return <-ctx.done
+}
 
-	return nil
+func (m *Memory) SubscribePattern(upstream chan *Message, pattern string) error {
+	ctx := subscriber{upstream: upstream, pattern: pattern, done: make(chan error)}
+
+	m.join <- ctx
+	return <-ctx.done
 }
 
 // Unsubscribe broker from one or multiple channels.
-func (m *Memory) Unsubscribe(upstream chan *Message, topics ...string) {
-	ctx := subscriber{upstream: upstream, topics: topics, done: make(chan interface{})}
+func (m *Memory) Unsubscribe(upstream chan *Message, topics ...string) error {
+	ctx := subscriber{upstream: upstream, topics: topics, done: make(chan error)}
 
 	m.leave <- ctx
-	<-ctx.done
+	return <-ctx.done
 }
 
-// Broadcast one or multiple Messages.
-func (m *Memory) Broadcast(messages ...*Message) error {
+func (m *Memory) UnsubscribePattern(upstream chan *Message, pattern string) error {
+	ctx := subscriber{upstream: upstream, pattern: pattern, done: make(chan error)}
+
+	m.leave <- ctx
+	return <-ctx.done
+}
+
+// Publish one or multiple Channel.
+func (m *Memory) Publish(messages ...*Message) error {
 	for _, msg := range messages {
 		m.messages <- msg
 	}

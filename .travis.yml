@@ -23,7 +23,7 @@ before_script:
 script:
   - vendor/bin/spiral-cs check src tests
   - go test -v -race -cover -coverprofile=broadcast.txt -covermode=atomic
-  - go build -o tests/ws-client tests/ws-client.go
+  - go build -o tests/go-client tests/go-client.go
   - vendor/bin/phpunit --coverage-clover=coverage.xml
 
 after_success:
