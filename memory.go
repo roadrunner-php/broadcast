@@ -55,7 +55,7 @@ func (m *Memory) handleLeave(sub subscriber) error {
 	return nil
 }
 
-// close the consumption and disconnect broker.
+// Stop closes the consumption and disconnects broker.
 func (m *Memory) Stop() {
 	close(m.stop)
 }

@@ -86,7 +86,7 @@ func (r *Redis) handleLeave(sub subscriber, pubsub *redis.PubSub) error {
 	return pubsub.Unsubscribe(dropTopics...)
 }
 
-// close the consumption and disconnect broker.
+// Stop closes the consumption and disconnects broker.
 func (r *Redis) Stop() {
 	close(r.stop)
 }
@@ -99,6 +99,7 @@ func (r *Redis) Subscribe(upstream chan *Message, topics ...string) error {
 	return <-ctx.done
 }
 
+// Subscribe broker to one or multiple topics.
 func (r *Redis) SubscribePattern(upstream chan *Message, pattern string) error {
 	ctx := subscriber{upstream: upstream, pattern: pattern, done: make(chan error)}
 
@@ -114,6 +115,7 @@ func (r *Redis) Unsubscribe(upstream chan *Message, topics ...string) error {
 	return <-ctx.done
 }
 
+// Unsubscribe broker from one or multiple topics.
 func (r *Redis) UnsubscribePattern(upstream chan *Message, pattern string) error {
 	ctx := subscriber{upstream: upstream, pattern: pattern, done: make(chan error)}
 

@@ -23,7 +23,7 @@ func (c *Client) Publish(msg ...*Message) error {
 	return c.broker.Publish(msg...)
 }
 
-// NewClient client to specific topics.
+// Subscribe client to specific topics.
 func (c *Client) Subscribe(topics ...string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -114,7 +114,7 @@ func (c *Client) Topics() []string {
 	return c.topics
 }
 
-// Topics return all the topics client subscribed to.
+// Patterns return all the patterns client subscribed to.
 func (c *Client) Patterns() []string {
 	c.mu.Lock()
 	defer c.mu.Unlock()

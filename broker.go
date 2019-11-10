@@ -7,7 +7,7 @@ type Broker interface {
 	// Serve serves broker.
 	Serve() error
 
-	// close the consumption and disconnect broker.
+	// Stop closes the consumption and disconnects broker.
 	Stop()
 
 	// Subscribe broker to one or multiple topics.
