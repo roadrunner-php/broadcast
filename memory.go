@@ -1,11 +1,17 @@
 package broadcast
 
+import (
+	"errors"
+	"sync/atomic"
+)
+
 // Memory manages broadcasting in memory.
 type Memory struct {
 	router      *Router
 	messages    chan *Message
 	join, leave chan subscriber
 	stop        chan interface{}
+	stopped     int32
 }
 
 // memoryBroker creates new memory based message broker.
@@ -16,6 +22,7 @@ func memoryBroker() *Memory {
 		join:     make(chan subscriber),
 		leave:    make(chan subscriber),
 		stop:     make(chan interface{}),
+		stopped:  0,
 	}
 }
 
@@ -57,11 +64,17 @@ func (m *Memory) handleLeave(sub subscriber) error {
 
 // Stop closes the consumption and disconnects broker.
 func (m *Memory) Stop() {
-	close(m.stop)
+	if atomic.CompareAndSwapInt32(&m.stopped, 0, 1) {
+		close(m.stop)
+	}
 }
 
 // Subscribe broker to one or multiple channels.
 func (m *Memory) Subscribe(upstream chan *Message, topics ...string) error {
+	if atomic.LoadInt32(&m.stopped) == 1 {
+		return errors.New("broker has been stopped")
+	}
+
 	ctx := subscriber{upstream: upstream, topics: topics, done: make(chan error)}
 
 	m.join <- ctx
@@ -70,6 +83,10 @@ func (m *Memory) Subscribe(upstream chan *Message, topics ...string) error {
 
 // SubscribePattern broker to pattern.
 func (m *Memory) SubscribePattern(upstream chan *Message, pattern string) error {
+	if atomic.LoadInt32(&m.stopped) == 1 {
+		return errors.New("broker has been stopped")
+	}
+
 	ctx := subscriber{upstream: upstream, pattern: pattern, done: make(chan error)}
 
 	m.join <- ctx
@@ -78,6 +95,10 @@ func (m *Memory) SubscribePattern(upstream chan *Message, pattern string) error 
 
 // Unsubscribe broker from one or multiple channels.
 func (m *Memory) Unsubscribe(upstream chan *Message, topics ...string) error {
+	if atomic.LoadInt32(&m.stopped) == 1 {
+		return errors.New("broker has been stopped")
+	}
+
 	ctx := subscriber{upstream: upstream, topics: topics, done: make(chan error)}
 
 	m.leave <- ctx
@@ -86,6 +107,10 @@ func (m *Memory) Unsubscribe(upstream chan *Message, topics ...string) error {
 
 // UnsubscribePattern broker from pattern.
 func (m *Memory) UnsubscribePattern(upstream chan *Message, pattern string) error {
+	if atomic.LoadInt32(&m.stopped) == 1 {
+		return errors.New("broker has been stopped")
+	}
+
 	ctx := subscriber{upstream: upstream, pattern: pattern, done: make(chan error)}
 
 	m.leave <- ctx
@@ -94,6 +119,10 @@ func (m *Memory) UnsubscribePattern(upstream chan *Message, pattern string) erro
 
 // Publish one or multiple Channel.
 func (m *Memory) Publish(messages ...*Message) error {
+	if atomic.LoadInt32(&m.stopped) == 1 {
+		return errors.New("broker has been stopped")
+	}
+
 	for _, msg := range messages {
 		m.messages <- msg
 	}
