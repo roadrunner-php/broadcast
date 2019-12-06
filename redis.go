@@ -14,7 +14,7 @@ type Redis struct {
 	messages      chan *Message
 	listen, leave chan subscriber
 	stop          chan interface{}
-	active        int32
+	stopped       int32
 }
 
 // creates new redis broker
@@ -37,6 +37,7 @@ func redisBroker(cfg *RedisConfig) (*Redis, error) {
 		listen:   make(chan subscriber),
 		leave:    make(chan subscriber),
 		stop:     make(chan interface{}),
+		stopped:  0,
 	}, nil
 }
 
@@ -44,7 +45,6 @@ func redisBroker(cfg *RedisConfig) (*Redis, error) {
 func (r *Redis) Serve() error {
 	pubsub := r.psClient.Subscribe()
 	channel := pubsub.Channel()
-	atomic.StoreInt32(&r.active, 1)
 
 	for {
 		select {
@@ -101,15 +101,15 @@ func (r *Redis) handleLeave(sub subscriber, pubsub *redis.PubSub) error {
 
 // Stop closes the consumption and disconnects broker.
 func (r *Redis) Stop() {
-	if atomic.CompareAndSwapInt32(&r.active, 1, 0) {
+	if atomic.CompareAndSwapInt32(&r.stopped, 1, 0) {
 		close(r.stop)
 	}
 }
 
 // Subscribe broker to one or multiple channels.
 func (r *Redis) Subscribe(upstream chan *Message, topics ...string) error {
-	if atomic.LoadInt32(&r.active) == 0 {
-		return errors.New("broker is not running")
+	if atomic.LoadInt32(&r.stopped) == 1 {
+		return errors.New("broker has been stopped")
 	}
 
 	ctx := subscriber{upstream: upstream, topics: topics, done: make(chan error)}
@@ -120,8 +120,8 @@ func (r *Redis) Subscribe(upstream chan *Message, topics ...string) error {
 
 // SubscribePattern broker to pattern.
 func (r *Redis) SubscribePattern(upstream chan *Message, pattern string) error {
-	if atomic.LoadInt32(&r.active) == 0 {
-		return errors.New("broker is not running")
+	if atomic.LoadInt32(&r.stopped) == 1 {
+		return errors.New("broker has been stopped")
 	}
 
 	ctx := subscriber{upstream: upstream, pattern: pattern, done: make(chan error)}
@@ -132,8 +132,8 @@ func (r *Redis) SubscribePattern(upstream chan *Message, pattern string) error {
 
 // Unsubscribe broker from one or multiple channels.
 func (r *Redis) Unsubscribe(upstream chan *Message, topics ...string) error {
-	if atomic.LoadInt32(&r.active) == 0 {
-		return errors.New("broker is not running")
+	if atomic.LoadInt32(&r.stopped) == 1 {
+		return errors.New("broker has been stopped")
 	}
 
 	ctx := subscriber{upstream: upstream, topics: topics, done: make(chan error)}
@@ -144,8 +144,8 @@ func (r *Redis) Unsubscribe(upstream chan *Message, topics ...string) error {
 
 // UnsubscribePattern broker from pattern.
 func (r *Redis) UnsubscribePattern(upstream chan *Message, pattern string) error {
-	if atomic.LoadInt32(&r.active) == 0 {
-		return errors.New("broker is not running")
+	if atomic.LoadInt32(&r.stopped) == 1 {
+		return errors.New("broker has been stopped")
 	}
 
 	ctx := subscriber{upstream: upstream, pattern: pattern, done: make(chan error)}
@@ -156,8 +156,8 @@ func (r *Redis) UnsubscribePattern(upstream chan *Message, pattern string) error
 
 // Publish one or multiple Channel.
 func (r *Redis) Publish(messages ...*Message) error {
-	if atomic.LoadInt32(&r.active) == 0 {
-		return errors.New("broker is not running")
+	if atomic.LoadInt32(&r.stopped) == 1 {
+		return errors.New("broker has been stopped")
 	}
 
 	for _, msg := range messages {

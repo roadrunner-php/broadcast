@@ -66,6 +66,7 @@ func TestMemory_BroadcastPattern(t *testing.T) {
 
 func TestMemory_NotActive(t *testing.T) {
 	b := memoryBroker()
+	b.stopped = 1
 
 	assert.Error(t, b.Publish(nil))
 	assert.Error(t, b.Subscribe(nil))

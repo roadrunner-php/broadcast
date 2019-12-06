@@ -77,7 +77,7 @@ func (s *Service) NewClient() *Client {
 func (s *Service) Publish(msg ...*Message) error {
 	broker := s.Broker()
 	if broker == nil {
-		return errors.New("no active broker")
+		return errors.New("no stopped broker")
 	}
 
 	return s.Broker().Publish(msg...)

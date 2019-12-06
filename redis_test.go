@@ -89,6 +89,7 @@ func TestRedis_BroadcastPattern(t *testing.T) {
 
 func TestRedis_NotActive(t *testing.T) {
 	b := &Redis{}
+	b.stopped = 1
 
 	assert.Error(t, b.Publish(nil))
 	assert.Error(t, b.Subscribe(nil))
