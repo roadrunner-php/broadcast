@@ -101,7 +101,7 @@ func (r *Redis) handleLeave(sub subscriber, pubsub *redis.PubSub) error {
 
 // Stop closes the consumption and disconnects broker.
 func (r *Redis) Stop() {
-	if atomic.CompareAndSwapInt32(&r.stopped, 1, 0) {
+	if atomic.CompareAndSwapInt32(&r.stopped, 0, 1) {
 		close(r.stop)
 	}
 }

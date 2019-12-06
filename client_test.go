@@ -17,12 +17,16 @@ func Test_Client_Topics(t *testing.T) {
 	assert.NoError(t, client.Subscribe("topic"))
 	assert.Equal(t, []string{"topic"}, client.Topics())
 
+	assert.NoError(t, client.Subscribe("topic"))
+	assert.Equal(t, []string{"topic"}, client.Topics())
+
 	assert.NoError(t, br.broker.Subscribe(client.upstream, "topic"))
 	assert.Equal(t, []string{"topic"}, client.Topics())
 
 	assert.NoError(t, br.Broker().Publish(newMessage("topic", "hello1")))
 	assert.Equal(t, `hello1`, readStr(<-client.Channel()))
 
+	assert.NoError(t, client.Unsubscribe("topic"))
 	assert.NoError(t, client.Unsubscribe("topic"))
 	assert.NoError(t, br.broker.Unsubscribe(client.upstream, "topic"))
 

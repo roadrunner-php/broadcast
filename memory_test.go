@@ -46,6 +46,9 @@ func TestMemory_BroadcastPattern(t *testing.T) {
 	assert.NoError(t, br.Broker().Publish(newMessage("topic/1", "hello1")))
 	assert.Equal(t, `hello1`, readStr(<-client.Channel()))
 
+	assert.NoError(t, client.Publish(newMessage("topic/1", "hello1")))
+	assert.Equal(t, `hello1`, readStr(<-client.Channel()))
+
 	assert.NoError(t, br.Broker().Publish(newMessage("topic/2", "hello2")))
 	assert.Equal(t, `hello2`, readStr(<-client.Channel()))
 
