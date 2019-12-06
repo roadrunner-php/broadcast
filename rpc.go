@@ -1,18 +1,18 @@
 package broadcast
 
 type rpcService struct {
-	s *Service
+	svc *Service
 }
 
 // Publish Messages.
 func (r *rpcService) Publish(msg []*Message, ok *bool) error {
 	*ok = true
-	return r.s.Publish(msg...)
+	return r.svc.Publish(msg...)
 }
 
 // Publish Messages in async mode.
 func (r *rpcService) PublishAsync(msg []*Message, ok *bool) error {
 	*ok = true
-	go r.s.Publish(msg...)
+	go r.svc.Publish(msg...)
 	return nil
 }

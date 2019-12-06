@@ -17,7 +17,6 @@ install:
   - php composer.phar install --no-interaction --prefer-source
 
 before_script:
-  - go build -o rr-broadcast cmd/rr-broadcast/main.go
   - go build -o tests/go-client tests/go-client.go
   - ./tests/go-client serve -c tests/.rr.yaml &
 

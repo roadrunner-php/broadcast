@@ -86,3 +86,13 @@ func TestRedis_BroadcastPattern(t *testing.T) {
 	assert.NoError(t, br.Broker().Publish(newMessage("topic/4", "hello7")))
 	assert.Equal(t, `hello7`, readStr(<-client.Channel()))
 }
+
+func TestRedis_NotActive(t *testing.T) {
+	b := &Redis{}
+
+	assert.Error(t, b.Publish(nil))
+	assert.Error(t, b.Subscribe(nil))
+	assert.Error(t, b.Unsubscribe(nil))
+	assert.Error(t, b.SubscribePattern(nil, ""))
+	assert.Error(t, b.UnsubscribePattern(nil, ""))
+}

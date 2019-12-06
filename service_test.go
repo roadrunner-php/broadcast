@@ -6,7 +6,9 @@ import (
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/spiral/roadrunner/service"
 	"github.com/spiral/roadrunner/service/rpc"
+	"github.com/stretchr/testify/assert"
 	"strings"
+	"testing"
 	"time"
 )
 
@@ -49,4 +51,9 @@ func readStr(m *Message) string {
 
 func newMessage(t, m string) *Message {
 	return &Message{Topic: t, Payload: []byte(m)}
+}
+
+func TestService_Publish(t *testing.T) {
+	svc := &Service{}
+	assert.Error(t, svc.Publish(nil))
 }

@@ -24,7 +24,7 @@ func (s *Service) Init(cfg *Config, rpc *rpc.Service) (ok bool, err error) {
 	s.cfg = cfg
 
 	if rpc != nil {
-		if err := rpc.Register(ID, &rpcService{s: s}); err != nil {
+		if err := rpc.Register(ID, &rpcService{svc: s}); err != nil {
 			return false, err
 		}
 	}
@@ -63,7 +63,7 @@ func (s *Service) Broker() Broker {
 	return s.broker
 }
 
-// NewClient returns single connected client with ability to consume or produce into associated topic(s).
+// NewClient returns single connected client with ability to consume or produce into associated topic(svc).
 func (s *Service) NewClient() *Client {
 	return &Client{
 		upstream: make(chan *Message),
@@ -80,5 +80,5 @@ func (s *Service) Publish(msg ...*Message) error {
 		return errors.New("no active broker")
 	}
 
-	return broker.Publish(msg...)
+	return s.Broker().Publish(msg...)
 }
