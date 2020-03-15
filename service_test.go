@@ -33,7 +33,12 @@ func setup(cfg string) (*Service, *rpc.Service, service.Container) {
 		panic(err)
 	}
 
-	go func() { c.Serve() }()
+	go func() {
+		err = c.Serve()
+		if err != nil {
+			panic(err)
+		}
+	}()
 	time.Sleep(time.Millisecond * 100)
 
 	b, _ := c.Get(ID)

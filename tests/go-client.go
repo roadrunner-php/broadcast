@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/spiral/broadcast"
+	"github.com/spiral/broadcast/v2"
 	rr "github.com/spiral/roadrunner/cmd/rr/cmd"
 	"github.com/spiral/roadrunner/service/rpc"
+	"golang.org/x/sync/errgroup"
 	"os"
 )
 
@@ -26,25 +27,41 @@ func (l *logService) Serve() error {
 	if err := client.SubscribePattern("tests/*"); err != nil {
 		return err
 	}
-	defer client.Close()
 
 	logFile, _ := os.Create("log.txt")
-	defer logFile.Close()
 
-	go func() {
+	g := &errgroup.Group{}
+	g.Go(func() error {
 		for msg := range client.Channel() {
-			logFile.Write([]byte(fmt.Sprintf(
+			_, err := logFile.Write([]byte(fmt.Sprintf(
 				"%s: %s\n",
 				msg.Topic,
 				string(msg.Payload),
 			)))
+			if err != nil {
+				return err
+			}
 
-			logFile.Sync()
+			err = logFile.Sync()
+			if err != nil {
+				return err
+			}
 		}
-	}()
+		return nil
+	})
 
 	<-l.stop
-	return nil
+	err := logFile.Close()
+	if err != nil {
+		return err
+	}
+
+	err = client.Close()
+	if err != nil {
+		return err
+	}
+
+	return g.Wait()
 }
 
 func (l *logService) Stop() {
