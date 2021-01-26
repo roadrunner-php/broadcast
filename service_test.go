@@ -2,14 +2,15 @@ package broadcast
 
 import (
 	"fmt"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/spiral/roadrunner/service"
 	"github.com/spiral/roadrunner/service/rpc"
 	"github.com/stretchr/testify/assert"
-	"strings"
-	"testing"
-	"time"
 )
 
 var rpcPort = 6010

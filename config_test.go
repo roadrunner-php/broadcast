@@ -2,10 +2,11 @@ package broadcast
 
 import (
 	"encoding/json"
+	"testing"
+
 	"github.com/spiral/roadrunner/service"
 	"github.com/spiral/roadrunner/service/rpc"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 type testCfg struct {

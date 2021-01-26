@@ -2,12 +2,13 @@ package broadcast
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/spiral/roadrunner/service"
 	"github.com/spiral/roadrunner/service/rpc"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestRedis_Error(t *testing.T) {

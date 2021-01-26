@@ -2,6 +2,7 @@ package broadcast
 
 import (
 	"errors"
+
 	"github.com/go-redis/redis"
 	"github.com/spiral/roadrunner/service"
 )
