@@ -84,11 +84,9 @@ func (r *Router) Unsubscribe(upstream chan *Message, topics ...string) (dropTopi
 			continue
 		}
 
-		for i, up := range r.routes[topic] {
-			if up == upstream {
-				r.routes[topic][i] = r.routes[topic][len(r.routes[topic])-1]
-				r.routes[topic][len(r.routes[topic])-1] = nil
-				r.routes[topic] = r.routes[topic][:len(r.routes[topic])-1]
+		for i := range r.routes[topic] {
+			if r.routes[topic][i] == upstream {
+				r.routes[topic] = append(r.routes[topic][:i], r.routes[topic][:i+1]...)
 				break
 			}
 		}

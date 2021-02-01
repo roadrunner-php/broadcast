@@ -93,10 +93,9 @@ func (c *Client) UnsubscribePattern(pattern string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	for i, g := range c.patterns {
-		if g == pattern {
-			c.patterns[i] = c.patterns[len(c.patterns)-1]
-			c.patterns = c.patterns[:len(c.patterns)-1]
+	for i := range c.patterns {
+		if c.patterns[i] == pattern {
+			c.patterns = append(c.patterns[:i], c.patterns[i+1:]...)
 
 			return c.broker.UnsubscribePattern(c.upstream, pattern)
 		}
