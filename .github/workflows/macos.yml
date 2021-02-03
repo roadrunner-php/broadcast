@@ -62,4 +62,5 @@ jobs:
 
       - name: Run golang tests
         run: |
+          mkdir ./coverage-ci
           go test -v -race -cover -coverpkg=./... -coverprofile=./coverage-ci/broadcast.txt -covermode=atomic
