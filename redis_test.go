@@ -3,6 +3,7 @@ package broadcast
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/sirupsen/logrus"
@@ -63,6 +64,7 @@ func TestRedis_Broadcast(t *testing.T) {
 
 func TestRedis_BroadcastPattern(t *testing.T) {
 	s, err := miniredis.Run()
+	time.Sleep(time.Second * 3)
 	assert.NoError(t, err)
 	defer s.Close()
 
