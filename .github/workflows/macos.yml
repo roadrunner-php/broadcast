@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: [ "7.4", "8.0" ]
+        php: [ "7.2","7.3", "7.4", "8.0" ]
         go: [ "1.14", "1.15" ]
         os: [ macos-latest ]
     steps:
@@ -48,7 +48,7 @@ jobs:
           restore-keys: ${{ runner.os }}-composer-
 
       - name: Install Composer dependencies
-        run: cd tests && composer update --prefer-dist --no-progress --ansi
+        run: composer update --prefer-dist --no-progress --ansi
 
       - name: Init Go modules Cache # Docs: <https://git.io/JfAKn#go---modules>
         uses: actions/cache@v2
