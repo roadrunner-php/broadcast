@@ -74,8 +74,7 @@ func (c *Client) Unsubscribe(topics ...string) error {
 	for _, topic := range topics {
 		for i, e := range c.topics {
 			if e == topic {
-				c.topics[i] = c.topics[len(c.topics)-1]
-				c.topics = c.topics[:len(c.topics)-1]
+				c.topics = append(c.topics[:i], c.topics[i+1:]...)
 				dropTopics = append(dropTopics, topic)
 			}
 		}
@@ -93,10 +92,9 @@ func (c *Client) UnsubscribePattern(pattern string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	for i, g := range c.patterns {
-		if g == pattern {
-			c.patterns[i] = c.patterns[len(c.patterns)-1]
-			c.patterns = c.patterns[:len(c.patterns)-1]
+	for i := range c.patterns {
+		if c.patterns[i] == pattern {
+			c.patterns = append(c.patterns[:i], c.patterns[i+1:]...)
 
 			return c.broker.UnsubscribePattern(c.upstream, pattern)
 		}

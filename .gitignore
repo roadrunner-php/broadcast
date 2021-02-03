@@ -1,6 +1,6 @@
 .idea
 go.sum
-vendor
+vendor_php
 composer.lock
 .php_cs.cache
 tests/log.txt

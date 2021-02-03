@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/spiral/broadcast/v2"
 	rr "github.com/spiral/roadrunner/cmd/rr/cmd"
 	"github.com/spiral/roadrunner/service/rpc"
 	"golang.org/x/sync/errgroup"
-	"os"
 )
 
 type logService struct {

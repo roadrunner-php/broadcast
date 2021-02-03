@@ -2,8 +2,9 @@ package broadcast
 
 import (
 	"errors"
-	"github.com/go-redis/redis"
 	"sync/atomic"
+
+	"github.com/go-redis/redis"
 )
 
 // Redis based broadcast Router.

@@ -1,8 +1,9 @@
 package broadcast
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_Client_Topics(t *testing.T) {

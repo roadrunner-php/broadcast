@@ -2,8 +2,9 @@ package broadcast
 
 import (
 	"errors"
-	"github.com/spiral/roadrunner/service/rpc"
 	"sync"
+
+	"github.com/spiral/roadrunner/service/rpc"
 )
 
 // ID defines public service name.
