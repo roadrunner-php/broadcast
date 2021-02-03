@@ -62,8 +62,10 @@ jobs:
 
       - name: Run golang tests on Linux
         run: |
+          docker-compose -f tests/docker-compose.yml up -d
           mkdir ./coverage-ci
           go test -v -race -cover -coverpkg=./... -coverprofile=./coverage-ci/broadcast.txt -covermode=atomic
+          docker-compose -f tests/docker-compose.yml down
 
       - uses: codecov/codecov-action@v1 # Docs: <https://github.com/codecov/codecov-action>
         with:
