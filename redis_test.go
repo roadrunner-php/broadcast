@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/alicebob/miniredis/v2"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/spiral/roadrunner/service"
@@ -30,7 +31,11 @@ func TestRedis_Error(t *testing.T) {
 }
 
 func TestRedis_Broadcast(t *testing.T) {
-	br, _, c := setup(`{"redis":{"addr":"localhost:6379"}}`)
+	s, err := miniredis.Run()
+	assert.NoError(t, err)
+	defer s.Close()
+
+	br, _, c := setup(`{"redis":{"addr":"localhost:` + s.Port() + `"}}`)
 	defer c.Stop()
 
 	client := br.NewClient()
@@ -57,7 +62,11 @@ func TestRedis_Broadcast(t *testing.T) {
 }
 
 func TestRedis_BroadcastPattern(t *testing.T) {
-	br, _, c := setup(`{"redis":{"addr":"localhost:6379"}}`)
+	s, err := miniredis.Run()
+	assert.NoError(t, err)
+	defer s.Close()
+
+	br, _, c := setup(`{"redis":{"addr":"localhost:` + s.Port() + `"}}`)
 	defer c.Stop()
 
 	client := br.NewClient()

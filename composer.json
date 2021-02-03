@@ -9,13 +9,16 @@
       "email": "wolfy.jd@gmail.com"
     }
   ],
+  "config": {
+    "vendor-dir": "vendor_php"
+  },
   "require": {
     "php": ">=7.2",
     "ext-json": "*",
     "spiral/roadrunner": "^1.1"
   },
   "require-dev": {
-    "phpunit/phpunit": "~7.0",
+    "phpunit/phpunit": "~8.0",
     "spiral/code-style": "^1.0"
   },
   "autoload": {

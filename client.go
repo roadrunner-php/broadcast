@@ -74,8 +74,7 @@ func (c *Client) Unsubscribe(topics ...string) error {
 	for _, topic := range topics {
 		for i, e := range c.topics {
 			if e == topic {
-				c.topics[i] = c.topics[len(c.topics)-1]
-				c.topics = c.topics[:len(c.topics)-1]
+				c.topics = append(c.topics[:i], c.topics[i+1:]...)
 				dropTopics = append(dropTopics, topic)
 			}
 		}
