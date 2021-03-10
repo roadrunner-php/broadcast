@@ -9,6 +9,6 @@ require (
 	github.com/onsi/gomega v1.9.0 // indirect
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spiral/roadrunner v1.9.2
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.0
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
 )
