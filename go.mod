@@ -3,7 +3,7 @@ module github.com/spiral/broadcast/v2
 go 1.15
 
 require (
-	github.com/go-redis/redis v6.15.7+incompatible
+	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/gobwas/glob v0.2.3
 	github.com/onsi/ginkgo v1.12.0 // indirect
 	github.com/onsi/gomega v1.9.0 // indirect
