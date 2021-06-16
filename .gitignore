@@ -1,6 +1,20 @@
-.idea
-go.sum
-vendor_php
+# IDEA
+.idea/
+*.iml
+
+# Composer
+composer.phar
+vendor/
 composer.lock
+
+# OS
+.DS_Store
+Thumbs.db
+*.exe
+
+# Other
+.phpunit.result.cache
 .php_cs.cache
-tests/log.txt
+clover.xml
+.env
+builds

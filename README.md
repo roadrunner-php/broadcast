@@ -1,18 +1,27 @@
-# RoadRunner: Event Broadcasting
-[![Latest Stable Version](https://poser.pugx.org/spiral/broadcast/version)](https://packagist.org/packages/spiral/broadcast)
-[![GoDoc](https://godoc.org/github.com/spiral/broadcast?status.svg)](https://godoc.org/github.com/spiral/broadcast)
-[![Build Status](https://travis-ci.org/spiral/broadcast.svg?branch=master)](https://travis-ci.org/spiral/broadcast)
-[![Go Report Card](https://goreportcard.com/badge/github.com/spiral/broadcast)](https://goreportcard.com/report/github.com/spiral/broadcast)
-[![Codecov](https://codecov.io/gh/spiral/broadcast/branch/master/graph/badge.svg)](https://codecov.io/gh/spiral/broadcast/)
+# RoadRunner Broadcast Plugin Bridge
 
-Features:
---------
-- Golang Client and PHP producer
-- Multi-topic subscriptions
-- In-memory routing and wildcard subscriptions
-- Redis and in-memory brokers
-- Automatic reconnects
+[![Latest Stable Version](https://poser.pugx.org/spiral/roadrunner-broadcast/version)](https://packagist.org/packages/spiral/roadrunner-broadcast)
+[![Build Status](https://github.com/spiral/roadrunner-broadcast/workflows/build/badge.svg)](https://github.com/spiral/roadrunner-broadcast/actions)
+[![Codecov](https://codecov.io/gh/spiral/roadrunner-broadcast/branch/master/graph/badge.svg)](https://codecov.io/gh/spiral/roadrunner-broadcast/)
 
-License:
---------
-The MIT License (MIT). Please see [`LICENSE`](./LICENSE) for more information. Maintained by [Spiral Scout](https://spiralscout.com).
+This repository contains the codebase bridge for broadcast RoadRunner plugin.
+
+## Installation
+
+To install application server and broadcast codebase
+
+```bash
+$ composer require spiral/roadrunner-broadcast
+```
+
+You can use the convenient installer to download the latest available compatible
+version of RoadRunner assembly:
+
+```bash
+$ composer require spiral/roadrunner-cli --dev
+$ vendor/bin/rr get
+```
+
+## Usage
+
+TBD

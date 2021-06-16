@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package broadcast.v1;
+
+option php_namespace = "Spiral\\RoadRunner\\Broadcast\\DTO\\V1";
+
+message Message {
+    string command = 1;
+    string broker = 2;
+    repeated string topics = 3;
+    bytes payload = 4;
+}
+
+// RPC request with messages
+message Request {
+    repeated Message messages = 1;
+}
+
+// RPC response (false in case of error)
+message Response {
+    bool ok = 1;
+}

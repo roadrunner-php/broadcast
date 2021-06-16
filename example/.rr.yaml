@@ -1,0 +1,16 @@
+rpc:
+    listen: tcp://127.0.0.1:6001
+
+server:
+    command: "php worker.php"
+    relay: "pipes"
+
+http:
+    address: 127.0.0.1:80
+    middleware: [ "websockets" ]
+    pool:
+        num_workers: 2
+
+websockets:
+    pubsubs: [ "memory" ]
+    path: "/ws"
