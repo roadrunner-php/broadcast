@@ -27,10 +27,9 @@ $factory = new Factory(RPC::create('tcp://127.0.0.1:6001'));
 ### Publish Through Broker
 
 ```php
-$factory = new Factory(RPC::create('tcp://127.0.0.1:6001'));
-
-$broker = $factory->select('memory'); // or "redis"
-// See "websockets:pubsubs" section in ".rr.yaml" file
+$broker = (new Factory(RPC::create('tcp://127.0.0.1:6001')))
+    ->select('memory'); // or "redis"
+// See "websockets:pubsubs: [ BROKER_NAME ]" section in ".rr.yaml" file
 
 $broker->publish('topic', 'message');
 
