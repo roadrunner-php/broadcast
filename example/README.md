@@ -24,7 +24,7 @@ $ php test.php
 $factory = new Factory(RPC::create('tcp://127.0.0.1:6001'));
 ```
 
-### Publish Through Broker
+### Publish Into Broker
 
 ```php
 $broker = (new Factory(RPC::create('tcp://127.0.0.1:6001')))
@@ -39,7 +39,7 @@ $broker->publish(['topic 1', 'topic 2'], 'message');
 $broker->publish(['topic 1', 'topic 2'], ['message 1', 'message 2']);
 ```
 
-### Publish Through Broker
+### Publish Into Topic
 
 ```php
 $broker = (new Factory(RPC::create('tcp://127.0.0.1:6001')))
