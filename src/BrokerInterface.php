@@ -27,11 +27,11 @@ interface BrokerInterface
     /**
      * Method to send messages to the required topic (channel).
      * <code>
-     *  $broker->send('topic', 'message');
-     *  $broker->send('topic', ['message 1', 'message 2']);
+     *  $broker->publish('topic', 'message');
+     *  $broker->publish('topic', ['message 1', 'message 2']);
      *
-     *  $broker->send(['topic 1', 'topic 2'], 'message');
-     *  $broker->send(['topic 1', 'topic 2'], ['message 1', 'message 2']);
+     *  $broker->publish(['topic 1', 'topic 2'], 'message');
+     *  $broker->publish(['topic 1', 'topic 2'], ['message 1', 'message 2']);
      * </code>
      *
      * In future major releases, the signature of this method will match.
