@@ -46,7 +46,7 @@ http:
 websockets:
   # Using an in-memory broker named "memory"
   pubsubs: [ "memory" ]
-  path: "/"
+  path: "/broadcast"
 ```
 
 > Read more about all available brokers on the
@@ -96,6 +96,40 @@ $topic = $broker->join(['channel-1', 'channel-2']);
 $topic->publish('message');
 $topic->publish(['another message', 'third message']);
 ```
+
+> Read more about all the possibilities in the
+> [documentation](https://roadrunner.dev/docs) page.
+
+## Client
+
+In addition to the server (PHP) part, the client part is also present in most
+projects. In most cases, this is a browser in which the connection to the server
+is made using the [WebSocket](https://en.wikipedia.org/wiki/WebSocket) protocol.
+
+```js
+const ws = new WebSocket('ws://127.0.0.1/broadcast');
+
+ws.onopen = e => {
+    const message = {
+        command: 'join',
+        broker:  'memory',
+        topics:  ['channel-1', 'channel-2']
+    };
+
+    ws.send(JSON.stringify(message));
+};
+
+ws.onmessage = e => {
+    const message = JSON.parse(e.data);
+
+    console.log(`${message.topic}: ${message.payload}`);
+}
+```
+
+
+## Examples
+
+Examples are available in the corresponding directory [./example](./example).
 
 ## License
 
