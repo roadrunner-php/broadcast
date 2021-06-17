@@ -23,13 +23,15 @@ abstract class Topic implements TopicInterface
     private BrokerInterface $broker;
 
     /**
-     * @var non-empty-array<string>
+     * @psalm-suppress InvalidPropertyAssignmentValue
+     * @var non-empty-list<string>
      */
     protected array $topics = [];
 
     /**
      * @param BrokerInterface $broker
      * @param iterable<string> $topics
+     * @throws InvalidArgumentException
      */
     public function __construct(BrokerInterface $broker, iterable $topics)
     {
@@ -39,6 +41,7 @@ abstract class Topic implements TopicInterface
             $this->topics[] = $topic;
         }
 
+        /** @psalm-suppress TypeDoesNotContainType */
         if ($this->topics === []) {
             throw new InvalidArgumentException('Unable to create instance for 0 topic names');
         }

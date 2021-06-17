@@ -11,9 +11,6 @@
         <RedundantCastGivenDocblockType errorLevel="suppress" />
         <DocblockTypeContradiction errorLevel="suppress" />
     </issueHandlers>
-    <stubs>
-        <file name="resources/stubs/igbinary.phpstub" />
-    </stubs>
     <projectFiles>
         <directory name="src" />
         <ignoreFiles>

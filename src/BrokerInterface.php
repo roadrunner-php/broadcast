@@ -11,6 +11,9 @@ declare(strict_types=1);
 
 namespace Spiral\RoadRunner\Broadcast;
 
+use Spiral\RoadRunner\Broadcast\Exception\BroadcastException;
+use Spiral\RoadRunner\Broadcast\Exception\InvalidArgumentException;
+
 /**
  * @psalm-type TopicsList = non-empty-list<string> | string
  * @psalm-type MessagesList = non-empty-list<string> | string
@@ -34,21 +37,25 @@ interface BrokerInterface
      *  $broker->publish(['topic 1', 'topic 2'], ['message 1', 'message 2']);
      * </code>
      *
-     * In future major releases, the signature of this method will match.
+     * Note: In future major releases, the signature of this method will be
+     * changed to include follow type-hints.
+     *
      * <code>
-     *  public function publish(iterable|string $message, iterable|string $channels): void;
+     *  public function publish(iterable|string $topics, iterable|string $messages): void;
      * </code>
      *
      * @param TopicsList $topics
      * @param MessagesList $messages
-     * @throws \InvalidArgumentException
+     * @throws BroadcastException
      */
     public function publish($topics, $messages): void;
 
     /**
+     * Join to concrete topic
+     *
      * @param TopicsList $topics
      * @return TopicInterface
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     public function join($topics): TopicInterface;
 }

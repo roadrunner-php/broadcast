@@ -51,8 +51,7 @@ final class Factory implements FactoryInterface
     }
 
     /**
-     * @param string $broker
-     * @return BrokerInterface
+     * {@inheritDoc}
      */
     public function select(string $broker): Broker
     {
