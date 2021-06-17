@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Spiral\RoadRunner\Broadcast\Topic;
 
 use Spiral\RoadRunner\Broadcast\BrokerInterface;
+use Spiral\RoadRunner\Broadcast\Exception\InvalidArgumentException;
 use Spiral\RoadRunner\Broadcast\TopicInterface;
 
 abstract class Topic implements TopicInterface
@@ -39,9 +40,7 @@ abstract class Topic implements TopicInterface
         }
 
         if ($this->topics === []) {
-            throw new \InvalidArgumentException(\sprintf(
-                'Unable to create Topic instance for 0 topics'
-            ));
+            throw new InvalidArgumentException('Unable to create instance for 0 topic names');
         }
     }
 
@@ -53,5 +52,3 @@ abstract class Topic implements TopicInterface
         $this->broker->publish($this->topics, $messages);
     }
 }
-
-

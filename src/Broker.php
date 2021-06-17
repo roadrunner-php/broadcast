@@ -16,6 +16,7 @@ use Spiral\Goridge\RPC\RPCInterface;
 use Spiral\RoadRunner\Broadcast\DTO\V1\Message;
 use Spiral\RoadRunner\Broadcast\DTO\V1\Request;
 use Spiral\RoadRunner\Broadcast\DTO\V1\Response;
+use Spiral\RoadRunner\Broadcast\Exception\InvalidArgumentException;
 use Spiral\RoadRunner\Broadcast\Topic\Group;
 use Spiral\RoadRunner\Broadcast\Topic\SingleTopic;
 
@@ -64,37 +65,32 @@ class Broker implements BrokerInterface
     }
 
     /**
-     * @param non-empty-array<Message> $messages
+     * @param non-empty-list<Message> $messages
      * @return Response
      */
-    private function request(array $messages): Response
+    private function request(iterable $messages): Response
     {
-        $request = new Request(['messages' => $messages]);
+        $request = new Request(['messages' => $this->toArray($messages)]);
 
         return $this->rpc->call('websockets.Publish', $request, Response::class);
     }
 
     /**
-     * @param iterable<string>|string $entry
-     * @return array
+     * @psalm-type T of mixed
+     * @param iterable<T>|T $entries
+     * @return array<T>
      */
-    private function toArrayOfStrings($entry): array
+    private function toArray($entries): array
     {
         switch (true) {
-            case \is_string($entry):
-                return [$entry];
+            case \is_array($entries):
+                return $entries;
 
-            case \is_array($entry):
-                return $entry;
-
-            case $entry instanceof \Traversable:
-                return \iterator_to_array($entry, false);
+            case $entries instanceof \Traversable:
+                return \iterator_to_array($entries, false);
 
             default:
-                throw new \InvalidArgumentException(\sprintf(
-                    'Argument must be a string or iterable<string>, but %s passed',
-                    \get_debug_type($entry)
-                ));
+                return [$entries];
         }
     }
 
@@ -103,10 +99,31 @@ class Broker implements BrokerInterface
      */
     public function publish($topics, $messages): void
     {
-        $topics = $this->toArrayOfStrings($topics);
+        assert(
+            \is_string($topics) || \is_iterable($topics),
+            '$topics argument must be type of iterable<string>|string'
+        );
+        assert(
+            \is_string($messages) || \is_iterable($messages),
+            '$messages argument must be type of iterable<string>|string'
+        );
 
-        $map = fn(string $message): Message => $this->createMessage($message, $topics);
-        $this->request(\array_map($map, $this->toArrayOfStrings($messages)));
+        $topics = $this->toArray($topics);
+        if ($topics === []) {
+            throw new InvalidArgumentException('Unable to publish message to 0 topics');
+        }
+
+        $request = [];
+
+        foreach ($this->toArray($messages) as $message) {
+            $request[] = $this->createMessage($message, $topics);
+        }
+
+        if ($request === []) {
+            throw new InvalidArgumentException('Unable to publish 0 messages');
+        }
+
+        $this->request($request);
     }
 
     /**
@@ -114,11 +131,16 @@ class Broker implements BrokerInterface
      */
     public function join($topics): TopicInterface
     {
-        $topics = $this->toArrayOfStrings($topics);
+        assert(
+            \is_string($topics) || \is_iterable($topics),
+            '$topics argument must be type of iterable<string>|string'
+        );
+
+        $topics = $this->toArray($topics);
 
         switch (\count($topics)) {
             case 0:
-                throw new \InvalidArgumentException('Unable to connect to 0 topics');
+                throw new InvalidArgumentException('Unable to connect to 0 topics');
 
             case 1:
                 return new SingleTopic($this, \reset($topics));
