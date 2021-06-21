@@ -11,7 +11,6 @@ declare(strict_types=1);
 
 namespace Spiral\RoadRunner\Broadcast\Tests\Topic;
 
-use Spiral\RoadRunner\Broadcast\Broker;
 use Spiral\RoadRunner\Broadcast\DTO\V1\Message;
 use Spiral\RoadRunner\Broadcast\DTO\V1\Request;
 use Spiral\RoadRunner\Broadcast\Exception\InvalidArgumentException;
