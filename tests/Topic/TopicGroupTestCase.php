@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Spiral\RoadRunner\Broadcast\Tests\Topic;
 
-use Spiral\RoadRunner\Broadcast\Broker;
+use Spiral\RoadRunner\Broadcast\Broadcast;
 use Spiral\RoadRunner\Broadcast\Exception\InvalidArgumentException;
 use Spiral\RoadRunner\Broadcast\Topic\Group;
 
@@ -40,13 +40,14 @@ class TopicGroupTestCase extends TopicTestCase
      */
     protected function topic(array $mapping = []): Group
     {
-        $broker = new Broker($this->rpc($mapping), $this->broker);
-        return new Group($broker, $this->names);
+        $broadcast = new Broadcast($this->rpc($mapping));
+
+        return new Group($broadcast, $this->names);
     }
 
     public function testCreatingWithZeroTopicNames(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        new Group(new Broker($this->rpc(), $this->broker), []);
+        new Group(new Broadcast($this->rpc()), []);
     }
 }

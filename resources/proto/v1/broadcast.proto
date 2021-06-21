@@ -6,9 +6,8 @@ option php_namespace = "Spiral\\RoadRunner\\Broadcast\\DTO\\V1";
 
 message Message {
     string command = 1;
-    string broker = 2;
-    repeated string topics = 3;
-    bytes payload = 4;
+    repeated string topics = 2;
+    bytes payload = 3;
 }
 
 // RPC request with messages

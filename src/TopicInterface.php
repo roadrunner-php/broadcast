@@ -14,7 +14,7 @@ namespace Spiral\RoadRunner\Broadcast;
 use Spiral\RoadRunner\Broadcast\Exception\BroadcastException;
 
 /**
- * @psalm-import-type MessagesList from BrokerInterface
+ * @psalm-import-type MessagesList from BroadcastInterface
  */
 interface TopicInterface
 {

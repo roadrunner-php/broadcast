@@ -12,5 +12,10 @@ http:
         num_workers: 2
 
 websockets:
-    pubsubs: [ "memory" ]
+    broker: default
     path: "/ws"
+
+broadcast:
+    default:
+        driver: memory
+

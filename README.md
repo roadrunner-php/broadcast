@@ -44,9 +44,12 @@ http:
   middleware: [ "websockets" ]
 
 websockets:
-  # Using an in-memory broker named "memory"
-  pubsubs: [ "memory" ]
-  path: "/broadcast"
+    broker: default
+    path: "/ws"
+
+broadcast:
+    default:
+        driver: memory
 ```
 
 > Read more about all available brokers on the
@@ -59,25 +62,20 @@ will become available to you.
 <?php
 
 use Spiral\Goridge\RPC\RPC;
-use Spiral\RoadRunner\Broadcast\Factory;
+use Spiral\RoadRunner\Broadcast\Broadcast;
 
 require __DIR__ . '/vendor/autoload.php';
 
-$factory = new Factory(RPC::create('tcp://127.0.0.1:6001'));
+$broadcast = new Broadcast(RPC::create('tcp://127.0.0.1:6001'));
 
-if (!$factory->isAvailable()) {
+if (!$broadcast->isAvailable()) {
     throw new \LogicException('The [broadcast] plugin not available');
 }
 
 //
-// Select "memory" broker
-//
-$broker = $factory->select('memory');
-
-//
 // Now we can send a message to a specific topic
 //
-$broker->publish('channel-1', 'message for channel #1');
+$broadcast->publish('channel-1', 'message for channel #1');
 ```
 
 ### Select Specific Topic
@@ -86,11 +84,8 @@ Alternatively, you can also use a specific topic (or set of topics) as a
 separate entity and post directly to it.
 
 ```php
-// Let's say we have already selected a specific broker
-$broker = $factory->select('memory');
-
 // Now we can select the topic we need to work only with it
-$topic = $broker->join(['channel-1', 'channel-2']);
+$topic = $broadcast->join(['channel-1', 'channel-2']);
 
 // And send messages there
 $topic->publish('message');
@@ -112,7 +107,6 @@ const ws = new WebSocket('ws://127.0.0.1/broadcast');
 ws.onopen = e => {
     const message = {
         command: 'join',
-        broker:  'memory',
         topics:  ['channel-1', 'channel-2']
     };
 

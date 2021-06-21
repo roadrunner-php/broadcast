@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Spiral\RoadRunner\Broadcast\Tests\Topic;
 
-use Spiral\RoadRunner\Broadcast\Broker;
+use Spiral\RoadRunner\Broadcast\Broadcast;
 use Spiral\RoadRunner\Broadcast\Topic\SingleTopic;
 
 class SingleTopicTestCase extends TopicTestCase
@@ -39,8 +39,8 @@ class SingleTopicTestCase extends TopicTestCase
      */
     protected function topic(array $mapping = []): SingleTopic
     {
-        $broker = new Broker($this->rpc($mapping), $this->broker);
+        $broadcast = new Broadcast($this->rpc($mapping));
 
-        return new SingleTopic($broker, $this->name);
+        return new SingleTopic($broadcast, $this->name);
     }
 }

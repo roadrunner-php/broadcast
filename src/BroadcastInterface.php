@@ -18,14 +18,14 @@ use Spiral\RoadRunner\Broadcast\Exception\InvalidArgumentException;
  * @psalm-type TopicsList = non-empty-list<string> | string
  * @psalm-type MessagesList = non-empty-list<string> | string
  */
-interface BrokerInterface
+interface BroadcastInterface
 {
     /**
-     * Returns name of the target broker.
+     * Returns information about whether a broadcast plugin is available.
      *
-     * @return string
+     * @return bool
      */
-    public function getName(): string;
+    public function isAvailable(): bool;
 
     /**
      * Method to send messages to the required topic (channel).

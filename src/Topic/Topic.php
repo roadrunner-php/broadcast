@@ -11,16 +11,16 @@ declare(strict_types=1);
 
 namespace Spiral\RoadRunner\Broadcast\Topic;
 
-use Spiral\RoadRunner\Broadcast\BrokerInterface;
+use Spiral\RoadRunner\Broadcast\BroadcastInterface;
 use Spiral\RoadRunner\Broadcast\Exception\InvalidArgumentException;
 use Spiral\RoadRunner\Broadcast\TopicInterface;
 
 abstract class Topic implements TopicInterface
 {
     /**
-     * @var BrokerInterface
+     * @var BroadcastInterface
      */
-    private BrokerInterface $broker;
+    private BroadcastInterface $broadcast;
 
     /**
      * @psalm-suppress InvalidPropertyAssignmentValue
@@ -29,13 +29,13 @@ abstract class Topic implements TopicInterface
     protected array $topics = [];
 
     /**
-     * @param BrokerInterface $broker
+     * @param BroadcastInterface $broadcast
      * @param iterable<string> $topics
      * @throws InvalidArgumentException
      */
-    public function __construct(BrokerInterface $broker, iterable $topics)
+    public function __construct(BroadcastInterface $broadcast, iterable $topics)
     {
-        $this->broker = $broker;
+        $this->broadcast = $broadcast;
 
         foreach ($topics as $topic) {
             $this->topics[] = $topic;
@@ -52,6 +52,6 @@ abstract class Topic implements TopicInterface
      */
     public function publish($messages): void
     {
-        $this->broker->publish($this->topics, $messages);
+        $this->broadcast->publish($this->topics, $messages);
     }
 }

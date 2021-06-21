@@ -18,15 +18,11 @@ class Message extends \Google\Protobuf\Internal\Message
      */
     protected $command = '';
     /**
-     * Generated from protobuf field <code>string broker = 2;</code>
-     */
-    protected $broker = '';
-    /**
-     * Generated from protobuf field <code>repeated string topics = 3;</code>
+     * Generated from protobuf field <code>repeated string topics = 2;</code>
      */
     private $topics;
     /**
-     * Generated from protobuf field <code>bytes payload = 4;</code>
+     * Generated from protobuf field <code>bytes payload = 3;</code>
      */
     protected $payload = '';
 
@@ -37,7 +33,6 @@ class Message extends \Google\Protobuf\Internal\Message
      *     Optional. Data for populating the Message object.
      *
      *     @type string $command
-     *     @type string $broker
      *     @type string[]|\Google\Protobuf\Internal\RepeatedField $topics
      *     @type string $payload
      * }
@@ -70,29 +65,7 @@ class Message extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>string broker = 2;</code>
-     * @return string
-     */
-    public function getBroker()
-    {
-        return $this->broker;
-    }
-
-    /**
-     * Generated from protobuf field <code>string broker = 2;</code>
-     * @param string $var
-     * @return $this
-     */
-    public function setBroker($var)
-    {
-        GPBUtil::checkString($var, True);
-        $this->broker = $var;
-
-        return $this;
-    }
-
-    /**
-     * Generated from protobuf field <code>repeated string topics = 3;</code>
+     * Generated from protobuf field <code>repeated string topics = 2;</code>
      * @return \Google\Protobuf\Internal\RepeatedField
      */
     public function getTopics()
@@ -101,7 +74,7 @@ class Message extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>repeated string topics = 3;</code>
+     * Generated from protobuf field <code>repeated string topics = 2;</code>
      * @param string[]|\Google\Protobuf\Internal\RepeatedField $var
      * @return $this
      */
@@ -114,7 +87,7 @@ class Message extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>bytes payload = 4;</code>
+     * Generated from protobuf field <code>bytes payload = 3;</code>
      * @return string
      */
     public function getPayload()
@@ -123,7 +96,7 @@ class Message extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>bytes payload = 4;</code>
+     * Generated from protobuf field <code>bytes payload = 3;</code>
      * @param string $var
      * @return $this
      */

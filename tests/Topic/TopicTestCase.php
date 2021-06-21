@@ -24,12 +24,8 @@ use Spiral\RoadRunner\Broadcast\TopicInterface;
  */
 abstract class TopicTestCase extends TestCase
 {
-    protected string $broker;
-
     public function setUp(): void
     {
-        $this->broker = \bin2hex(\random_bytes(32));
-
         parent::setUp();
     }
 
@@ -42,7 +38,7 @@ abstract class TopicTestCase extends TestCase
     {
         $expected = \random_bytes(32);
         $topic = $this->topic([
-            'websockets.Publish' => function (Request $request) use ($expected) {
+            'broadcast.Publish' => function (Request $request) use ($expected) {
                 /** @var Message $message */
                 foreach ($request->getMessages() as $message) {
                     $this->assertSame($expected, $message->getPayload());
@@ -60,7 +56,7 @@ abstract class TopicTestCase extends TestCase
         $expected = [\random_bytes(32), \random_bytes(32), \random_bytes(32)];
 
         $topic = $this->topic([
-            'websockets.Publish' => function (Request $request) use ($expected) {
+            'broadcast.Publish' => function (Request $request) use ($expected) {
                 /** @var Message $message */
                 foreach ($request->getMessages() as $i => $message) {
                     $this->assertArrayHasKey($i, $expected);
@@ -79,7 +75,7 @@ abstract class TopicTestCase extends TestCase
         $expected = [\random_bytes(32), \random_bytes(32), \random_bytes(32)];
 
         $topic = $this->topic([
-            'websockets.Publish' => function (Request $request) use ($expected) {
+            'broadcast.Publish' => function (Request $request) use ($expected) {
                 /** @var Message $message */
                 foreach ($request->getMessages() as $i => $message) {
                     $this->assertArrayHasKey($i, $expected);

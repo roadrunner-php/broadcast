@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Spiral\RoadRunner\Broadcast;
 
+use Spiral\Goridge\RPC\Codec\JsonCodec;
 use Spiral\Goridge\RPC\Codec\ProtobufCodec;
 use Spiral\Goridge\RPC\RPCInterface;
 use Spiral\RoadRunner\Broadcast\DTO\V1\Message;
@@ -21,7 +22,7 @@ use Spiral\RoadRunner\Broadcast\Exception\InvalidArgumentException;
 use Spiral\RoadRunner\Broadcast\Topic\Group;
 use Spiral\RoadRunner\Broadcast\Topic\SingleTopic;
 
-class Broker implements BrokerInterface
+final class Broadcast implements BroadcastInterface
 {
     /**
      * @var RPCInterface
@@ -29,26 +30,32 @@ class Broker implements BrokerInterface
     private RPCInterface $rpc;
 
     /**
-     * @var string
-     */
-    private string $broker;
-
-    /**
      * @param RPCInterface $rpc
-     * @param string $name
      */
-    public function __construct(RPCInterface $rpc, string $name)
+    public function __construct(RPCInterface $rpc)
     {
         $this->rpc = $rpc->withCodec(new ProtobufCodec());
-        $this->broker = $name;
     }
 
     /**
      * {@inheritDoc}
      */
-    public function getName(): string
+    public function isAvailable(): bool
     {
-        return $this->broker;
+        try {
+            /** @var array<string>|mixed $result */
+            $result = $this->rpc
+                ->withCodec(new JsonCodec())
+                ->call('informer.List', true);
+
+            if (! \is_array($result)) {
+                return false;
+            }
+
+            return \in_array('websockets', $result, true);
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     /**
@@ -59,7 +66,6 @@ class Broker implements BrokerInterface
     private function createMessage(string $message, array $topics): Message
     {
         return new Message([
-            'broker'  => $this->broker,
             'topics'  => $topics,
             'payload' => $message,
         ]);
@@ -75,7 +81,7 @@ class Broker implements BrokerInterface
         $request = new Request(['messages' => $this->toArray($messages)]);
 
         /** @var Response $response */
-        $response = $this->rpc->call('websockets.Publish', $request, Response::class);
+        $response = $this->rpc->call('broadcast.Publish', $request, Response::class);
 
         if (! $response->getOk()) {
             throw new BroadcastException('An error occurred while publishing message');

@@ -13,7 +13,7 @@ $script = <<<'html'
     <body>
     <code id="messages"></code>
     <script>
-    window.addEventListener("load", function (evt) {
+    window.addEventListener("load", function () {
         let messages = document.getElementById("messages");
 
         let print = function (message) {
@@ -24,7 +24,7 @@ $script = <<<'html'
 
         ws.onopen = function () {
             print("open");
-            ws.send(`{"command":"join", "broker": "memory", "topics":["topic-1", "topic-2"]}`)
+            ws.send(`{"command":"join", "topics":["topic-1", "topic-2"]}`)
         };
 
         ws.onclose = function () {

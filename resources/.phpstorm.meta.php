@@ -7,8 +7,8 @@ namespace PHPSTORM_META {
     //
 
     registerArgumentsSet('goridge_rpc_methods_broadcast',
-        'websockets.Publish',
-        'websockets.PublishAsync',
+        'broadcast.Publish',
+        'broadcast.PublishAsync',
     );
 
     expectedArguments(\Spiral\Goridge\RPC\RPCInterface::call(), 0,

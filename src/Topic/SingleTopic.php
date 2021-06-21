@@ -11,17 +11,17 @@ declare(strict_types=1);
 
 namespace Spiral\RoadRunner\Broadcast\Topic;
 
-use Spiral\RoadRunner\Broadcast\BrokerInterface;
+use Spiral\RoadRunner\Broadcast\BroadcastInterface;
 
 final class SingleTopic extends Topic
 {
     /**
-     * @param BrokerInterface $broker
+     * @param BroadcastInterface $broadcast
      * @param string $topic
      */
-    public function __construct(BrokerInterface $broker, string $topic)
+    public function __construct(BroadcastInterface $broadcast, string $topic)
     {
-        parent::__construct($broker, [$topic]);
+        parent::__construct($broadcast, [$topic]);
     }
 
     /**
