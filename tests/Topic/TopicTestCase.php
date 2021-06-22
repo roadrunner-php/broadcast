@@ -15,7 +15,6 @@ use Spiral\RoadRunner\Broadcast\DTO\V1\Message;
 use Spiral\RoadRunner\Broadcast\DTO\V1\Request;
 use Spiral\RoadRunner\Broadcast\Exception\InvalidArgumentException;
 use Spiral\RoadRunner\Broadcast\Tests\TestCase;
-use Spiral\RoadRunner\Broadcast\Topic\SingleTopic;
 use Spiral\RoadRunner\Broadcast\TopicInterface;
 
 /**

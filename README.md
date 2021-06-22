@@ -24,9 +24,6 @@ $ vendor/bin/rr get
 
 ## Usage
 
-First you need to add at least one pub/sub broker to your RoadRunner configuration
-and create http worker. Each of the dependencies below is required.
-
 For example, such a configuration would be quite feasible to run:
 
 ```yaml
