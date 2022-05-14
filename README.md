@@ -47,6 +47,7 @@ websockets:
 broadcast:
     default:
         driver: memory
+        config: {}
 ```
 
 > Read more about all available brokers on the
