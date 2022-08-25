@@ -21,13 +21,6 @@ use Spiral\RoadRunner\Broadcast\Exception\InvalidArgumentException;
 interface BroadcastInterface
 {
     /**
-     * Returns information about whether a broadcast plugin is available.
-     *
-     * @return bool
-     */
-    public function isAvailable(): bool;
-
-    /**
      * Method to send messages to the required topic (channel).
      * <code>
      *  $broadcast->publish('topic', 'message');
