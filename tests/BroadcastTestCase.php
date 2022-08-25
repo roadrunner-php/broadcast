@@ -37,29 +37,10 @@ class BroadcastTestCase extends TestCase
 
     public function testIsAvailable(): void
     {
-        $factory = $this->broadcast(['informer.List' => '["websockets"]']);
-        $this->assertTrue($factory->isAvailable());
-    }
+        $this->expectException(\RuntimeException::class);
+        $this->expectErrorMessage('Spiral\RoadRunner\Broadcast\Broadcast::isAvailable method is deprecated.');
 
-    public function testNotAvailable(): void
-    {
-        $factory = $this->broadcast(['informer.List' => '[]']);
-        $this->assertFalse($factory->isAvailable());
-    }
-
-    public function testNotAvailableOnNonArrayResponse(): void
-    {
-        $factory = $this->broadcast(['informer.List' => '42']);
-        $this->assertFalse($factory->isAvailable());
-    }
-
-    public function testNotAvailableOnErrorResponse(): void
-    {
-        $factory = $this->broadcast(['informer.List' => (static function () {
-            throw new \Exception();
-        })]);
-
-        $this->assertFalse($factory->isAvailable());
+        $this->broadcast()->isAvailable();
     }
 
     public function testPublishingSingleMessage(): void
