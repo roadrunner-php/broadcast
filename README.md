@@ -66,10 +66,6 @@ require __DIR__ . '/vendor/autoload.php';
 
 $broadcast = new Broadcast(RPC::create('tcp://127.0.0.1:6001'));
 
-if (!$broadcast->isAvailable()) {
-    throw new \LogicException('The [broadcast] plugin not available');
-}
-
 //
 // Now we can send a message to a specific topic
 //
